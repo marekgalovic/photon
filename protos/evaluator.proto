@@ -1,0 +1,17 @@
+syntax = "proto3";
+package serving;
+
+service EvaluatorService {
+    rpc Evaluate(EvaluationRequest) returns (EvaluationResponse);
+}
+
+message EvaluationRequest {
+    string model_uid = 1;
+    map<string,bytes> features = 2;
+}
+
+message EvaluationResponse {
+    string model_uid = 1;
+    string model_version_uid = 2;
+    string node = 3;
+}

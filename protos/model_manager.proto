@@ -1,0 +1,10 @@
+syntax = "proto3";
+package serving;
+
+import "protos/core.proto";
+
+service ModelManagerService {
+    rpc ListModels(ListModelsRequest) returns (stream Model);
+}
+
+message ListModelsRequest {}
