@@ -68,7 +68,6 @@ func ValueInterfacePbToInterfaceMap(features map[string]*pb.ValueInterface) (map
         default:
             return nil, fmt.Errorf("Unsupoprted type %s for key %s", reflect.TypeOf(value.GetValue()).String(), key)
         }
-        result[key] = value.GetValue()
     }
 
     return result, nil

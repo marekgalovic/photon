@@ -18,18 +18,25 @@ func main() {
         log.Fatal(err)
     }
 
+    mysql, err := storage.NewMysql("root:@tcp(127.0.0.1:3306)/serving_test?parseTime=True")
+    if err != nil {
+        log.Fatal(err)
+    }
+
     // Stores
     featuresRepository := storage.NewFeaturesRepository()
-    modelsRepository := storage.NewModelsRepository()
+    modelsRepository := storage.NewModelsRepository(mysql)
 
     featuresResolver := server.NewFeaturesResolver(featuresRepository)
-    modelManager := server.NewModelManager(modelsRepository)
-    evaluator := server.NewEvaluator(modelManager, featuresResolver)
+    modelResolver := server.NewModelResolver(modelsRepository)
+    evaluator := server.NewEvaluator(modelResolver, featuresResolver)
+
+    log.Info(modelResolver.GetModel("abcd"))
 
     // Services
     grpcServer := grpc.NewServer()
     pb.RegisterEvaluatorServiceServer(grpcServer, services.NewEvaluatorService(evaluator))
-    pb.RegisterModelManagerServiceServer(grpcServer, services.NewModelManagerService(modelManager))
+    pb.RegisterModelManagerServiceServer(grpcServer, services.NewModelManagerService(modelsRepository))
 
     log.Info("Listening ...")
     grpcServer.Serve(listener)

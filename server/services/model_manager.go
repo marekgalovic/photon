@@ -3,17 +3,17 @@ package services
 import (
     "golang.org/x/net/context";
     
-    "github.com/marekgalovic/serving/server";
+    "github.com/marekgalovic/serving/server/storage";
     pb "github.com/marekgalovic/serving/server/protos"
 )
 
 type ModelManagerService struct {
-    modelManager *server.ModelManager
+    modelsRepository *storage.ModelsRepository
 }
 
-func NewModelManagerService(modelManager *server.ModelManager) *ModelManagerService {
+func NewModelManagerService(modelsRepository *storage.ModelsRepository) *ModelManagerService {
     return &ModelManagerService{
-        modelManager: modelManager,
+        modelsRepository: modelsRepository,
     }
 }
 
