@@ -12,6 +12,6 @@ func NewFeaturesResolver(db *storage.FeaturesRepository) *FeaturesResolver {
     return &FeaturesResolver{db: db}
 }
 
-func (r *FeaturesResolver) Resolve(features []string) (map[string]interface{}, error) {
-    return nil, nil
+func (r *FeaturesResolver) Resolve(modelVersion *storage.ModelVersion, requestFeatures map[string]interface{}) (map[string]interface{}, error) {
+    return requestFeatures, nil
 }

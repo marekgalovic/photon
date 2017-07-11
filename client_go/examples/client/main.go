@@ -21,4 +21,14 @@ func main() {
     }
 
     log.Info(result)
+
+    // c := 0
+    // for i := 0; i < 1000; i++ {
+        
+
+    //     if result["score"] == "B" {
+    //         c += 1
+    //     }
+    // }
+    // log.Info(c)
 }

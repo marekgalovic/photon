@@ -5,6 +5,33 @@ import "protos/core.proto";
 
 service ModelManagerService {
     rpc ListModels(ListModelsRequest) returns (stream Model);
+    rpc CreateModel(CreateModelRequest) returns (Model);
+    rpc DeleteModel(DeleteModelRequest) returns (EmptyResponse);
+
+    // Versions
+    rpc CreateModelVersion(CreateModelVersionRequest) returns (ModelVersion);
+    rpc DeleteModelVersion(DeleteModelVersionRequest) returns (EmptyResponse);
 }
 
 message ListModelsRequest {}
+
+message CreateModelRequest {
+    string name = 1;
+    string owner = 2;
+    ModelType type = 3;
+}
+
+message DeleteModelRequest {
+    string model_uid = 1;
+}
+
+message CreateModelVersionRequest {
+    string name = 1;
+    repeated string request_features = 2;
+    repeated string stored_features = 3;
+}
+
+message DeleteModelVersionRequest {
+    string model_uid    = 1;
+    string version_uid  = 2;
+}

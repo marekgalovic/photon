@@ -14,7 +14,7 @@ message EvaluationRequest {
 
 message EvaluationResponse {
     string model_uid = 1;
-    string model_version_uid = 2;
+    string version_uid = 2;
     string node = 3;
     map<string,ValueInterface> result = 4;
 }

@@ -32,7 +32,7 @@ func (service *EvaluatorService) Evaluate(ctx context.Context, req *pb.Evaluatio
 
     return &pb.EvaluationResponse{
         ModelUid: "x000",
-        ModelVersionUid: "x001",
+        VersionUid: "x001",
         Result: result,
     }, nil
 }
