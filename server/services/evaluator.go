@@ -4,6 +4,7 @@ import (
     "golang.org/x/net/context";
 
     "github.com/marekgalovic/serving/server";
+    "github.com/marekgalovic/serving/server/utils";
     pb "github.com/marekgalovic/serving/server/protos"
 )
 
@@ -18,5 +19,20 @@ func NewEvaluatorService(evaluator *server.Evaluator) *EvaluatorService {
 }
 
 func (service *EvaluatorService) Evaluate(ctx context.Context, req *pb.EvaluationRequest) (*pb.EvaluationResponse, error) {
-    return nil, nil
+    featureInterfaces, err := utils.ValueInterfacePbToInterfaceMap(req.Features)
+    if err != nil {
+        return nil, err
+    }
+
+    resultInterfaces, err := service.evaluator.Evaluate(req.ModelUid, featureInterfaces)
+    result, err := utils.InterfaceMapToValueInterfacePb(resultInterfaces)
+    if err != nil {
+        return nil, err
+    }
+
+    return &pb.EvaluationResponse{
+        ModelUid: "x000",
+        ModelVersionUid: "x001",
+        Result: result,
+    }, nil
 }

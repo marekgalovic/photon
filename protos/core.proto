@@ -15,3 +15,15 @@ message ModelVersion {
     int32 created_at    = 2;
     int32 updated_at    = 3;
 }
+
+message ValueInterface {
+    oneof value {
+        bool value_boolean = 1;
+        int32 value_int32 = 2;
+        int64 value_int64 = 3;
+        float value_float32 = 4;
+        double value_float64 = 5;
+        string value_string = 6;
+        bytes value_bytes = 7;
+    }
+}
