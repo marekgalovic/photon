@@ -8,7 +8,11 @@ import (
 )
 
 type Mysql struct {
-    conn *sql.DB
+    *sql.DB
+}
+
+type Scannable interface {
+    Scan(...interface{}) error
 }
 
 func NewMysql(connUrl string) (*Mysql, error) {
@@ -21,21 +25,11 @@ func NewMysql(connUrl string) (*Mysql, error) {
         return nil, err
     }
 
-    return &Mysql{
-        conn: conn,
-    }, nil
+    return &Mysql{conn}, nil
 }
 
-func (mysql *Mysql) Close() {
-    mysql.conn.Close()
-}
-
-func (mysql *Mysql) Prepare(query string) (*sql.Stmt, error) {
-    return mysql.conn.Prepare(query)
-}
-
-func (mysql *Mysql) Exec(query string, args ...interface{}) (int64, error) {
-    stmt, err := mysql.conn.Prepare(query)
+func (mysql *Mysql) ExecPrepared(query string, args ...interface{}) (int64, error) {
+    stmt, err := mysql.Prepare(query)
     if err != nil {
         return 0, err
     }
@@ -49,8 +43,28 @@ func (mysql *Mysql) Exec(query string, args ...interface{}) (int64, error) {
     return result.RowsAffected()
 }
 
-func (mysql *Mysql) Query(query string, args ...interface{}) ([]map[string]interface{}, error) {
-    stmt, err := mysql.conn.Prepare(query)
+func (mysql *Mysql) QueryPrepared(query string, args ...interface{}) (*sql.Rows, error) {
+    stmt, err := mysql.Prepare(query)
+    if err != nil {
+        return nil, err
+    }
+    defer stmt.Close()
+
+    return stmt.Query(args...)
+}
+
+func (mysql *Mysql) QueryRowPrepared(query string, args ...interface{}) (*sql.Row, error) {
+    stmt, err := mysql.Prepare(query)
+    if err != nil {
+        return nil, err
+    }
+    defer stmt.Close()
+
+    return stmt.QueryRow(args...), nil
+}
+
+func (mysql *Mysql) QueryDynamic(query string, args ...interface{}) ([]map[string]interface{}, error) {
+    stmt, err := mysql.Prepare(query)
     if err != nil {
         return nil, err
     }
@@ -90,4 +104,3 @@ func (mysql *Mysql) blankRow(size int) []interface{} {
     }
     return placeholders
 }
-
