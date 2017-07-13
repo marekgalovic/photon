@@ -1,9 +1,11 @@
 package storage
 
 type FeaturesRepository struct {
-
+    db *Mysql
 }
 
-func NewFeaturesRepository() *FeaturesRepository {
-    return &FeaturesRepository{}
+func NewFeaturesRepository(db *Mysql) *FeaturesRepository {
+    return &FeaturesRepository{db: db}
 }
+
+

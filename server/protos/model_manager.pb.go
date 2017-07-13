@@ -25,16 +25,31 @@ func (m *ListModelsRequest) String() string            { return proto.CompactTex
 func (*ListModelsRequest) ProtoMessage()               {}
 func (*ListModelsRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
+type FindModelRequest struct {
+	Uid string `protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`
+}
+
+func (m *FindModelRequest) Reset()                    { *m = FindModelRequest{} }
+func (m *FindModelRequest) String() string            { return proto.CompactTextString(m) }
+func (*FindModelRequest) ProtoMessage()               {}
+func (*FindModelRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+
+func (m *FindModelRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
+	}
+	return ""
+}
+
 type CreateModelRequest struct {
-	Name  string    `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Owner string    `protobuf:"bytes,2,opt,name=owner" json:"owner,omitempty"`
-	Type  ModelType `protobuf:"varint,3,opt,name=type,enum=serving.ModelType" json:"type,omitempty"`
+	Name  string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Owner string `protobuf:"bytes,2,opt,name=owner" json:"owner,omitempty"`
 }
 
 func (m *CreateModelRequest) Reset()                    { *m = CreateModelRequest{} }
 func (m *CreateModelRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateModelRequest) ProtoMessage()               {}
-func (*CreateModelRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*CreateModelRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func (m *CreateModelRequest) GetName() string {
 	if m != nil {
@@ -50,91 +65,177 @@ func (m *CreateModelRequest) GetOwner() string {
 	return ""
 }
 
-func (m *CreateModelRequest) GetType() ModelType {
-	if m != nil {
-		return m.Type
-	}
-	return ModelType_PMML
-}
-
 type DeleteModelRequest struct {
-	ModelUid string `protobuf:"bytes,1,opt,name=model_uid,json=modelUid" json:"model_uid,omitempty"`
+	Uid string `protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`
 }
 
 func (m *DeleteModelRequest) Reset()                    { *m = DeleteModelRequest{} }
 func (m *DeleteModelRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeleteModelRequest) ProtoMessage()               {}
-func (*DeleteModelRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*DeleteModelRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
 
-func (m *DeleteModelRequest) GetModelUid() string {
+func (m *DeleteModelRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
+	}
+	return ""
+}
+
+type ListVersionsRequest struct {
+	ModelUid string `protobuf:"bytes,1,opt,name=model_uid,json=modelUid" json:"model_uid,omitempty"`
+}
+
+func (m *ListVersionsRequest) Reset()                    { *m = ListVersionsRequest{} }
+func (m *ListVersionsRequest) String() string            { return proto.CompactTextString(m) }
+func (*ListVersionsRequest) ProtoMessage()               {}
+func (*ListVersionsRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+
+func (m *ListVersionsRequest) GetModelUid() string {
 	if m != nil {
 		return m.ModelUid
 	}
 	return ""
 }
 
-type CreateModelVersionRequest struct {
-	Name            string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	RequestFeatures []string `protobuf:"bytes,2,rep,name=request_features,json=requestFeatures" json:"request_features,omitempty"`
-	StoredFeatures  []string `protobuf:"bytes,3,rep,name=stored_features,json=storedFeatures" json:"stored_features,omitempty"`
+type FindVersionRequest struct {
+	Uid string `protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`
 }
 
-func (m *CreateModelVersionRequest) Reset()                    { *m = CreateModelVersionRequest{} }
-func (m *CreateModelVersionRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateModelVersionRequest) ProtoMessage()               {}
-func (*CreateModelVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
+func (m *FindVersionRequest) Reset()                    { *m = FindVersionRequest{} }
+func (m *FindVersionRequest) String() string            { return proto.CompactTextString(m) }
+func (*FindVersionRequest) ProtoMessage()               {}
+func (*FindVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
 
-func (m *CreateModelVersionRequest) GetName() string {
+func (m *FindVersionRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
+	}
+	return ""
+}
+
+type PrimaryVersionRequest struct {
+	ModelUid string `protobuf:"bytes,1,opt,name=model_uid,json=modelUid" json:"model_uid,omitempty"`
+}
+
+func (m *PrimaryVersionRequest) Reset()                    { *m = PrimaryVersionRequest{} }
+func (m *PrimaryVersionRequest) String() string            { return proto.CompactTextString(m) }
+func (*PrimaryVersionRequest) ProtoMessage()               {}
+func (*PrimaryVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
+
+func (m *PrimaryVersionRequest) GetModelUid() string {
+	if m != nil {
+		return m.ModelUid
+	}
+	return ""
+}
+
+type SetPrimaryVersionRequest struct {
+	ModelUid string `protobuf:"bytes,1,opt,name=model_uid,json=modelUid" json:"model_uid,omitempty"`
+	Uid      string `protobuf:"bytes,2,opt,name=uid" json:"uid,omitempty"`
+}
+
+func (m *SetPrimaryVersionRequest) Reset()                    { *m = SetPrimaryVersionRequest{} }
+func (m *SetPrimaryVersionRequest) String() string            { return proto.CompactTextString(m) }
+func (*SetPrimaryVersionRequest) ProtoMessage()               {}
+func (*SetPrimaryVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{7} }
+
+func (m *SetPrimaryVersionRequest) GetModelUid() string {
+	if m != nil {
+		return m.ModelUid
+	}
+	return ""
+}
+
+func (m *SetPrimaryVersionRequest) GetUid() string {
+	if m != nil {
+		return m.Uid
+	}
+	return ""
+}
+
+type CreateVersionRequest struct {
+	ModelUid        string   `protobuf:"bytes,1,opt,name=model_uid,json=modelUid" json:"model_uid,omitempty"`
+	Name            string   `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	IsPrimary       bool     `protobuf:"varint,3,opt,name=is_primary,json=isPrimary" json:"is_primary,omitempty"`
+	IsShadow        bool     `protobuf:"varint,4,opt,name=is_shadow,json=isShadow" json:"is_shadow,omitempty"`
+	RequestFeatures []string `protobuf:"bytes,5,rep,name=request_features,json=requestFeatures" json:"request_features,omitempty"`
+	StoredFeatures  []string `protobuf:"bytes,6,rep,name=stored_features,json=storedFeatures" json:"stored_features,omitempty"`
+}
+
+func (m *CreateVersionRequest) Reset()                    { *m = CreateVersionRequest{} }
+func (m *CreateVersionRequest) String() string            { return proto.CompactTextString(m) }
+func (*CreateVersionRequest) ProtoMessage()               {}
+func (*CreateVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{8} }
+
+func (m *CreateVersionRequest) GetModelUid() string {
+	if m != nil {
+		return m.ModelUid
+	}
+	return ""
+}
+
+func (m *CreateVersionRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *CreateModelVersionRequest) GetRequestFeatures() []string {
+func (m *CreateVersionRequest) GetIsPrimary() bool {
+	if m != nil {
+		return m.IsPrimary
+	}
+	return false
+}
+
+func (m *CreateVersionRequest) GetIsShadow() bool {
+	if m != nil {
+		return m.IsShadow
+	}
+	return false
+}
+
+func (m *CreateVersionRequest) GetRequestFeatures() []string {
 	if m != nil {
 		return m.RequestFeatures
 	}
 	return nil
 }
 
-func (m *CreateModelVersionRequest) GetStoredFeatures() []string {
+func (m *CreateVersionRequest) GetStoredFeatures() []string {
 	if m != nil {
 		return m.StoredFeatures
 	}
 	return nil
 }
 
-type DeleteModelVersionRequest struct {
-	ModelUid   string `protobuf:"bytes,1,opt,name=model_uid,json=modelUid" json:"model_uid,omitempty"`
-	VersionUid string `protobuf:"bytes,2,opt,name=version_uid,json=versionUid" json:"version_uid,omitempty"`
+type DeleteVersionRequest struct {
+	Uid string `protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`
 }
 
-func (m *DeleteModelVersionRequest) Reset()                    { *m = DeleteModelVersionRequest{} }
-func (m *DeleteModelVersionRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteModelVersionRequest) ProtoMessage()               {}
-func (*DeleteModelVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (m *DeleteVersionRequest) Reset()                    { *m = DeleteVersionRequest{} }
+func (m *DeleteVersionRequest) String() string            { return proto.CompactTextString(m) }
+func (*DeleteVersionRequest) ProtoMessage()               {}
+func (*DeleteVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{9} }
 
-func (m *DeleteModelVersionRequest) GetModelUid() string {
+func (m *DeleteVersionRequest) GetUid() string {
 	if m != nil {
-		return m.ModelUid
-	}
-	return ""
-}
-
-func (m *DeleteModelVersionRequest) GetVersionUid() string {
-	if m != nil {
-		return m.VersionUid
+		return m.Uid
 	}
 	return ""
 }
 
 func init() {
 	proto.RegisterType((*ListModelsRequest)(nil), "serving.ListModelsRequest")
+	proto.RegisterType((*FindModelRequest)(nil), "serving.FindModelRequest")
 	proto.RegisterType((*CreateModelRequest)(nil), "serving.CreateModelRequest")
 	proto.RegisterType((*DeleteModelRequest)(nil), "serving.DeleteModelRequest")
-	proto.RegisterType((*CreateModelVersionRequest)(nil), "serving.CreateModelVersionRequest")
-	proto.RegisterType((*DeleteModelVersionRequest)(nil), "serving.DeleteModelVersionRequest")
+	proto.RegisterType((*ListVersionsRequest)(nil), "serving.ListVersionsRequest")
+	proto.RegisterType((*FindVersionRequest)(nil), "serving.FindVersionRequest")
+	proto.RegisterType((*PrimaryVersionRequest)(nil), "serving.PrimaryVersionRequest")
+	proto.RegisterType((*SetPrimaryVersionRequest)(nil), "serving.SetPrimaryVersionRequest")
+	proto.RegisterType((*CreateVersionRequest)(nil), "serving.CreateVersionRequest")
+	proto.RegisterType((*DeleteVersionRequest)(nil), "serving.DeleteVersionRequest")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -148,12 +249,17 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for ModelManagerService service
 
 type ModelManagerServiceClient interface {
-	ListModels(ctx context.Context, in *ListModelsRequest, opts ...grpc.CallOption) (ModelManagerService_ListModelsClient, error)
-	CreateModel(ctx context.Context, in *CreateModelRequest, opts ...grpc.CallOption) (*Model, error)
-	DeleteModel(ctx context.Context, in *DeleteModelRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	List(ctx context.Context, in *ListModelsRequest, opts ...grpc.CallOption) (ModelManagerService_ListClient, error)
+	Find(ctx context.Context, in *FindModelRequest, opts ...grpc.CallOption) (*Model, error)
+	Create(ctx context.Context, in *CreateModelRequest, opts ...grpc.CallOption) (*Model, error)
+	Delete(ctx context.Context, in *DeleteModelRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Versions
-	CreateModelVersion(ctx context.Context, in *CreateModelVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error)
-	DeleteModelVersion(ctx context.Context, in *DeleteModelVersionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ListVersions(ctx context.Context, in *ListVersionsRequest, opts ...grpc.CallOption) (ModelManagerService_ListVersionsClient, error)
+	FindVersion(ctx context.Context, in *FindVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error)
+	PrimaryVersion(ctx context.Context, in *PrimaryVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error)
+	SetPrimaryVersion(ctx context.Context, in *SetPrimaryVersionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	CreateVersion(ctx context.Context, in *CreateVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error)
+	DeleteVersion(ctx context.Context, in *DeleteVersionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type modelManagerServiceClient struct {
@@ -164,12 +270,12 @@ func NewModelManagerServiceClient(cc *grpc.ClientConn) ModelManagerServiceClient
 	return &modelManagerServiceClient{cc}
 }
 
-func (c *modelManagerServiceClient) ListModels(ctx context.Context, in *ListModelsRequest, opts ...grpc.CallOption) (ModelManagerService_ListModelsClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_ModelManagerService_serviceDesc.Streams[0], c.cc, "/serving.ModelManagerService/ListModels", opts...)
+func (c *modelManagerServiceClient) List(ctx context.Context, in *ListModelsRequest, opts ...grpc.CallOption) (ModelManagerService_ListClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_ModelManagerService_serviceDesc.Streams[0], c.cc, "/serving.ModelManagerService/List", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &modelManagerServiceListModelsClient{stream}
+	x := &modelManagerServiceListClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -179,16 +285,16 @@ func (c *modelManagerServiceClient) ListModels(ctx context.Context, in *ListMode
 	return x, nil
 }
 
-type ModelManagerService_ListModelsClient interface {
+type ModelManagerService_ListClient interface {
 	Recv() (*Model, error)
 	grpc.ClientStream
 }
 
-type modelManagerServiceListModelsClient struct {
+type modelManagerServiceListClient struct {
 	grpc.ClientStream
 }
 
-func (x *modelManagerServiceListModelsClient) Recv() (*Model, error) {
+func (x *modelManagerServiceListClient) Recv() (*Model, error) {
 	m := new(Model)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -196,36 +302,104 @@ func (x *modelManagerServiceListModelsClient) Recv() (*Model, error) {
 	return m, nil
 }
 
-func (c *modelManagerServiceClient) CreateModel(ctx context.Context, in *CreateModelRequest, opts ...grpc.CallOption) (*Model, error) {
+func (c *modelManagerServiceClient) Find(ctx context.Context, in *FindModelRequest, opts ...grpc.CallOption) (*Model, error) {
 	out := new(Model)
-	err := grpc.Invoke(ctx, "/serving.ModelManagerService/CreateModel", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/Find", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *modelManagerServiceClient) DeleteModel(ctx context.Context, in *DeleteModelRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *modelManagerServiceClient) Create(ctx context.Context, in *CreateModelRequest, opts ...grpc.CallOption) (*Model, error) {
+	out := new(Model)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/Create", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelManagerServiceClient) Delete(ctx context.Context, in *DeleteModelRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
-	err := grpc.Invoke(ctx, "/serving.ModelManagerService/DeleteModel", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/Delete", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *modelManagerServiceClient) CreateModelVersion(ctx context.Context, in *CreateModelVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error) {
+func (c *modelManagerServiceClient) ListVersions(ctx context.Context, in *ListVersionsRequest, opts ...grpc.CallOption) (ModelManagerService_ListVersionsClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_ModelManagerService_serviceDesc.Streams[1], c.cc, "/serving.ModelManagerService/ListVersions", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &modelManagerServiceListVersionsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ModelManagerService_ListVersionsClient interface {
+	Recv() (*ModelVersion, error)
+	grpc.ClientStream
+}
+
+type modelManagerServiceListVersionsClient struct {
+	grpc.ClientStream
+}
+
+func (x *modelManagerServiceListVersionsClient) Recv() (*ModelVersion, error) {
+	m := new(ModelVersion)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *modelManagerServiceClient) FindVersion(ctx context.Context, in *FindVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error) {
 	out := new(ModelVersion)
-	err := grpc.Invoke(ctx, "/serving.ModelManagerService/CreateModelVersion", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/FindVersion", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *modelManagerServiceClient) DeleteModelVersion(ctx context.Context, in *DeleteModelVersionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *modelManagerServiceClient) PrimaryVersion(ctx context.Context, in *PrimaryVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error) {
+	out := new(ModelVersion)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/PrimaryVersion", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelManagerServiceClient) SetPrimaryVersion(ctx context.Context, in *SetPrimaryVersionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
-	err := grpc.Invoke(ctx, "/serving.ModelManagerService/DeleteModelVersion", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/SetPrimaryVersion", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelManagerServiceClient) CreateVersion(ctx context.Context, in *CreateVersionRequest, opts ...grpc.CallOption) (*ModelVersion, error) {
+	out := new(ModelVersion)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/CreateVersion", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelManagerServiceClient) DeleteVersion(ctx context.Context, in *DeleteVersionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := grpc.Invoke(ctx, "/serving.ModelManagerService/DeleteVersion", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -235,107 +409,205 @@ func (c *modelManagerServiceClient) DeleteModelVersion(ctx context.Context, in *
 // Server API for ModelManagerService service
 
 type ModelManagerServiceServer interface {
-	ListModels(*ListModelsRequest, ModelManagerService_ListModelsServer) error
-	CreateModel(context.Context, *CreateModelRequest) (*Model, error)
-	DeleteModel(context.Context, *DeleteModelRequest) (*EmptyResponse, error)
+	List(*ListModelsRequest, ModelManagerService_ListServer) error
+	Find(context.Context, *FindModelRequest) (*Model, error)
+	Create(context.Context, *CreateModelRequest) (*Model, error)
+	Delete(context.Context, *DeleteModelRequest) (*EmptyResponse, error)
 	// Versions
-	CreateModelVersion(context.Context, *CreateModelVersionRequest) (*ModelVersion, error)
-	DeleteModelVersion(context.Context, *DeleteModelVersionRequest) (*EmptyResponse, error)
+	ListVersions(*ListVersionsRequest, ModelManagerService_ListVersionsServer) error
+	FindVersion(context.Context, *FindVersionRequest) (*ModelVersion, error)
+	PrimaryVersion(context.Context, *PrimaryVersionRequest) (*ModelVersion, error)
+	SetPrimaryVersion(context.Context, *SetPrimaryVersionRequest) (*EmptyResponse, error)
+	CreateVersion(context.Context, *CreateVersionRequest) (*ModelVersion, error)
+	DeleteVersion(context.Context, *DeleteVersionRequest) (*EmptyResponse, error)
 }
 
 func RegisterModelManagerServiceServer(s *grpc.Server, srv ModelManagerServiceServer) {
 	s.RegisterService(&_ModelManagerService_serviceDesc, srv)
 }
 
-func _ModelManagerService_ListModels_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _ModelManagerService_List_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ListModelsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ModelManagerServiceServer).ListModels(m, &modelManagerServiceListModelsServer{stream})
+	return srv.(ModelManagerServiceServer).List(m, &modelManagerServiceListServer{stream})
 }
 
-type ModelManagerService_ListModelsServer interface {
+type ModelManagerService_ListServer interface {
 	Send(*Model) error
 	grpc.ServerStream
 }
 
-type modelManagerServiceListModelsServer struct {
+type modelManagerServiceListServer struct {
 	grpc.ServerStream
 }
 
-func (x *modelManagerServiceListModelsServer) Send(m *Model) error {
+func (x *modelManagerServiceListServer) Send(m *Model) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ModelManagerService_CreateModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ModelManagerService_Find_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindModelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelManagerServiceServer).Find(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/serving.ModelManagerService/Find",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelManagerServiceServer).Find(ctx, req.(*FindModelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelManagerService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateModelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModelManagerServiceServer).CreateModel(ctx, in)
+		return srv.(ModelManagerServiceServer).Create(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/serving.ModelManagerService/CreateModel",
+		FullMethod: "/serving.ModelManagerService/Create",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelManagerServiceServer).CreateModel(ctx, req.(*CreateModelRequest))
+		return srv.(ModelManagerServiceServer).Create(ctx, req.(*CreateModelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModelManagerService_DeleteModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ModelManagerService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteModelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModelManagerServiceServer).DeleteModel(ctx, in)
+		return srv.(ModelManagerServiceServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/serving.ModelManagerService/DeleteModel",
+		FullMethod: "/serving.ModelManagerService/Delete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelManagerServiceServer).DeleteModel(ctx, req.(*DeleteModelRequest))
+		return srv.(ModelManagerServiceServer).Delete(ctx, req.(*DeleteModelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModelManagerService_CreateModelVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateModelVersionRequest)
+func _ModelManagerService_ListVersions_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListVersionsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ModelManagerServiceServer).ListVersions(m, &modelManagerServiceListVersionsServer{stream})
+}
+
+type ModelManagerService_ListVersionsServer interface {
+	Send(*ModelVersion) error
+	grpc.ServerStream
+}
+
+type modelManagerServiceListVersionsServer struct {
+	grpc.ServerStream
+}
+
+func (x *modelManagerServiceListVersionsServer) Send(m *ModelVersion) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _ModelManagerService_FindVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindVersionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModelManagerServiceServer).CreateModelVersion(ctx, in)
+		return srv.(ModelManagerServiceServer).FindVersion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/serving.ModelManagerService/CreateModelVersion",
+		FullMethod: "/serving.ModelManagerService/FindVersion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelManagerServiceServer).CreateModelVersion(ctx, req.(*CreateModelVersionRequest))
+		return srv.(ModelManagerServiceServer).FindVersion(ctx, req.(*FindVersionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModelManagerService_DeleteModelVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteModelVersionRequest)
+func _ModelManagerService_PrimaryVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrimaryVersionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModelManagerServiceServer).DeleteModelVersion(ctx, in)
+		return srv.(ModelManagerServiceServer).PrimaryVersion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/serving.ModelManagerService/DeleteModelVersion",
+		FullMethod: "/serving.ModelManagerService/PrimaryVersion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelManagerServiceServer).DeleteModelVersion(ctx, req.(*DeleteModelVersionRequest))
+		return srv.(ModelManagerServiceServer).PrimaryVersion(ctx, req.(*PrimaryVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelManagerService_SetPrimaryVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPrimaryVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelManagerServiceServer).SetPrimaryVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/serving.ModelManagerService/SetPrimaryVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelManagerServiceServer).SetPrimaryVersion(ctx, req.(*SetPrimaryVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelManagerService_CreateVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelManagerServiceServer).CreateVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/serving.ModelManagerService/CreateVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelManagerServiceServer).CreateVersion(ctx, req.(*CreateVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelManagerService_DeleteVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelManagerServiceServer).DeleteVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/serving.ModelManagerService/DeleteVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelManagerServiceServer).DeleteVersion(ctx, req.(*DeleteVersionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -345,26 +617,47 @@ var _ModelManagerService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ModelManagerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateModel",
-			Handler:    _ModelManagerService_CreateModel_Handler,
+			MethodName: "Find",
+			Handler:    _ModelManagerService_Find_Handler,
 		},
 		{
-			MethodName: "DeleteModel",
-			Handler:    _ModelManagerService_DeleteModel_Handler,
+			MethodName: "Create",
+			Handler:    _ModelManagerService_Create_Handler,
 		},
 		{
-			MethodName: "CreateModelVersion",
-			Handler:    _ModelManagerService_CreateModelVersion_Handler,
+			MethodName: "Delete",
+			Handler:    _ModelManagerService_Delete_Handler,
 		},
 		{
-			MethodName: "DeleteModelVersion",
-			Handler:    _ModelManagerService_DeleteModelVersion_Handler,
+			MethodName: "FindVersion",
+			Handler:    _ModelManagerService_FindVersion_Handler,
+		},
+		{
+			MethodName: "PrimaryVersion",
+			Handler:    _ModelManagerService_PrimaryVersion_Handler,
+		},
+		{
+			MethodName: "SetPrimaryVersion",
+			Handler:    _ModelManagerService_SetPrimaryVersion_Handler,
+		},
+		{
+			MethodName: "CreateVersion",
+			Handler:    _ModelManagerService_CreateVersion_Handler,
+		},
+		{
+			MethodName: "DeleteVersion",
+			Handler:    _ModelManagerService_DeleteVersion_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ListModels",
-			Handler:       _ModelManagerService_ListModels_Handler,
+			StreamName:    "List",
+			Handler:       _ModelManagerService_List_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ListVersions",
+			Handler:       _ModelManagerService_ListVersions_Handler,
 			ServerStreams: true,
 		},
 	},
@@ -374,29 +667,37 @@ var _ModelManagerService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("protos/model_manager.proto", fileDescriptor3) }
 
 var fileDescriptor3 = []byte{
-	// 376 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x53, 0x4d, 0x6f, 0xe2, 0x30,
-	0x10, 0x55, 0x80, 0xfd, 0x60, 0x90, 0x60, 0x19, 0x76, 0x57, 0x21, 0x1c, 0x16, 0xe5, 0xb0, 0xa5,
-	0x17, 0xda, 0xd2, 0x1b, 0xc7, 0x7e, 0x9d, 0x8a, 0x5a, 0xa5, 0xa5, 0x52, 0x4f, 0x28, 0x25, 0x03,
-	0x8a, 0x44, 0xe2, 0xd4, 0x36, 0x54, 0x9c, 0xfb, 0x97, 0xfb, 0x03, 0x2a, 0x6c, 0x03, 0x09, 0x29,
-	0xdc, 0x92, 0x37, 0x6f, 0x66, 0x9e, 0xdf, 0xb3, 0xc1, 0x49, 0x38, 0x93, 0x4c, 0x9c, 0x44, 0x2c,
-	0xa0, 0xd9, 0x28, 0xf2, 0x63, 0x7f, 0x4a, 0xbc, 0xab, 0x40, 0xfc, 0x21, 0x88, 0x2f, 0xc2, 0x78,
-	0xea, 0xd4, 0x0d, 0x69, 0xcc, 0x38, 0xe9, 0x9a, 0xdb, 0x80, 0xfa, 0x6d, 0x28, 0xe4, 0x60, 0xd5,
-	0x26, 0x3c, 0x7a, 0x9d, 0x93, 0x90, 0xee, 0x04, 0xf0, 0x92, 0x93, 0x2f, 0x49, 0xc1, 0x06, 0x45,
-	0x84, 0x52, 0xec, 0x47, 0x64, 0x5b, 0x6d, 0xab, 0x53, 0xf6, 0xd4, 0x37, 0xfe, 0x86, 0x6f, 0xec,
-	0x2d, 0x26, 0x6e, 0x17, 0x14, 0xa8, 0x7f, 0xf0, 0x3f, 0x94, 0xe4, 0x32, 0x21, 0xbb, 0xd8, 0xb6,
-	0x3a, 0xd5, 0x1e, 0x76, 0xcd, 0xfe, 0xae, 0x1a, 0xf7, 0xb8, 0x4c, 0xc8, 0x53, 0x75, 0xf7, 0x0c,
-	0xf0, 0x8a, 0x66, 0xb4, 0xb3, 0xa7, 0x05, 0x65, 0x7d, 0x8a, 0x79, 0x18, 0x98, 0x65, 0x3f, 0x15,
-	0x30, 0x0c, 0x03, 0xf7, 0xdd, 0x82, 0x66, 0x4a, 0xdb, 0x13, 0x71, 0x11, 0xb2, 0xf8, 0x90, 0xc4,
-	0x63, 0xf8, 0xc5, 0x75, 0x79, 0x34, 0x21, 0x5f, 0xce, 0x39, 0x09, 0xbb, 0xd0, 0x2e, 0x76, 0xca,
-	0x5e, 0xcd, 0xe0, 0x37, 0x06, 0xc6, 0x23, 0xa8, 0x09, 0xc9, 0x38, 0x05, 0x5b, 0x66, 0x51, 0x31,
-	0xab, 0x1a, 0x5e, 0x13, 0xdd, 0x67, 0x68, 0xa6, 0x84, 0xef, 0x88, 0x38, 0xa4, 0x1f, 0xff, 0x41,
-	0x65, 0xa1, 0xe9, 0xaa, 0xac, 0x6d, 0x03, 0x03, 0x0d, 0xc3, 0xa0, 0xf7, 0x51, 0x80, 0x86, 0x9a,
-	0x3a, 0xd0, 0x19, 0x3e, 0xac, 0xbc, 0x1b, 0x13, 0xf6, 0x01, 0xb6, 0x41, 0xa1, 0xb3, 0xf1, 0x34,
-	0x97, 0x9e, 0x53, 0xcd, 0xfa, 0x7d, 0x6a, 0x61, 0x1f, 0x2a, 0x29, 0xcf, 0xb0, 0xb5, 0x21, 0xe4,
-	0x53, 0xde, 0xed, 0xc6, 0x0b, 0xa8, 0xa4, 0x8e, 0x9a, 0xea, 0xcd, 0x27, 0xe7, 0xfc, 0xdd, 0x14,
-	0xaf, 0xa3, 0x44, 0x2e, 0x3d, 0x12, 0x09, 0x8b, 0x05, 0xe1, 0x5d, 0xe6, 0x3e, 0x19, 0xbb, 0xd0,
-	0xfd, 0x4a, 0x46, 0xd6, 0x4b, 0xe7, 0x4f, 0x56, 0xcd, 0xba, 0xf5, 0x3e, 0x73, 0x71, 0xf2, 0x03,
-	0xf7, 0x86, 0xb3, 0x4f, 0xe2, 0xcb, 0x77, 0xf5, 0x1c, 0xce, 0x3f, 0x03, 0x00, 0x00, 0xff, 0xff,
-	0x20, 0x0e, 0xb4, 0x75, 0x48, 0x03, 0x00, 0x00,
+	// 503 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xdb, 0x6e, 0xd3, 0x40,
+	0x10, 0x95, 0x9b, 0x0b, 0xc9, 0x40, 0xd3, 0x64, 0x92, 0x22, 0xe3, 0x52, 0x14, 0x2c, 0x04, 0xe1,
+	0x25, 0x94, 0x52, 0x1e, 0x41, 0x42, 0xd0, 0x20, 0x24, 0x8a, 0x90, 0x23, 0x78, 0x8d, 0x4c, 0x3d,
+	0x94, 0x95, 0x6a, 0x6f, 0xd8, 0x75, 0xa8, 0xfa, 0x43, 0xfc, 0x12, 0xbf, 0x83, 0xf6, 0x12, 0xc7,
+	0x97, 0xba, 0xd0, 0x37, 0xef, 0x99, 0x33, 0x67, 0xcf, 0xee, 0x9c, 0x35, 0x78, 0x4b, 0xc1, 0x53,
+	0x2e, 0x9f, 0xc5, 0x3c, 0xa2, 0xf3, 0x45, 0x1c, 0x26, 0xe1, 0x19, 0x89, 0xa9, 0x06, 0xf1, 0x96,
+	0x24, 0xf1, 0x8b, 0x25, 0x67, 0xde, 0xc0, 0x92, 0x4e, 0xb9, 0x20, 0x53, 0xf3, 0x87, 0x30, 0xf8,
+	0xc8, 0x64, 0x7a, 0xa2, 0xda, 0x64, 0x40, 0x3f, 0x57, 0x24, 0x53, 0xff, 0x11, 0xf4, 0x67, 0x2c,
+	0x89, 0x34, 0x68, 0x31, 0xec, 0x43, 0x63, 0xc5, 0x22, 0xd7, 0x19, 0x3b, 0x93, 0x6e, 0xa0, 0x3e,
+	0xfd, 0xd7, 0x80, 0x6f, 0x05, 0x85, 0x29, 0x15, 0x78, 0x08, 0xcd, 0x24, 0x8c, 0xc9, 0x12, 0xf5,
+	0x37, 0x8e, 0xa0, 0xc5, 0x2f, 0x12, 0x12, 0xee, 0x96, 0x06, 0xcd, 0xc2, 0x7f, 0x0c, 0xf8, 0x8e,
+	0xce, 0xa9, 0xd4, 0x5f, 0xdd, 0xe7, 0x10, 0x86, 0xca, 0xe2, 0x57, 0x12, 0x92, 0xf1, 0x64, 0x6d,
+	0x12, 0xf7, 0xa0, 0x6b, 0x0e, 0xbb, 0xa1, 0x77, 0x34, 0xf0, 0x85, 0x45, 0x4a, 0x5b, 0x9d, 0xc0,
+	0xf6, 0xd4, 0x6b, 0x1f, 0xc1, 0xee, 0x67, 0xc1, 0xe2, 0x50, 0x5c, 0x96, 0xa8, 0xd7, 0xaa, 0x7f,
+	0x00, 0x77, 0x4e, 0xe9, 0xcd, 0x1b, 0xd7, 0x06, 0xb6, 0x36, 0x06, 0xfe, 0x38, 0x30, 0x32, 0xb7,
+	0x78, 0x13, 0x9d, 0xf5, 0x25, 0x6f, 0xe5, 0x2e, 0x79, 0x1f, 0x80, 0xc9, 0xc5, 0xd2, 0x98, 0x72,
+	0x1b, 0x63, 0x67, 0xd2, 0x09, 0xba, 0x4c, 0x5a, 0x97, 0x4a, 0x8f, 0xc9, 0x85, 0xfc, 0x11, 0x46,
+	0xfc, 0xc2, 0x6d, 0xea, 0x6a, 0x87, 0xc9, 0xb9, 0x5e, 0xe3, 0x53, 0xe8, 0x0b, 0xb3, 0xef, 0xe2,
+	0x3b, 0x85, 0xe9, 0x4a, 0x90, 0x74, 0x5b, 0xe3, 0xc6, 0xa4, 0x1b, 0xec, 0x58, 0x7c, 0x66, 0x61,
+	0x7c, 0x02, 0x3b, 0x32, 0xe5, 0x82, 0xa2, 0x0d, 0xb3, 0xad, 0x99, 0x3d, 0x03, 0xaf, 0x89, 0xfe,
+	0x04, 0x46, 0x66, 0xbc, 0xff, 0x1a, 0xc2, 0xe1, 0xef, 0x16, 0x0c, 0x75, 0x06, 0x4e, 0x4c, 0x6c,
+	0xe7, 0x2a, 0xae, 0xa7, 0x84, 0x47, 0xd0, 0x54, 0x83, 0x47, 0x6f, 0x6a, 0x03, 0x3c, 0xad, 0x44,
+	0xd5, 0xeb, 0x65, 0x35, 0x8d, 0x1f, 0x38, 0xf8, 0x1c, 0x9a, 0x6a, 0xf4, 0x78, 0x2f, 0xab, 0x94,
+	0xb3, 0x5c, 0x6e, 0xc2, 0x97, 0xd0, 0x36, 0x33, 0xc0, 0xbd, 0xac, 0x52, 0x8d, 0x76, 0xa5, 0xed,
+	0x15, 0xb4, 0xcd, 0x09, 0x73, 0x6d, 0xd5, 0x44, 0x7b, 0x77, 0xb3, 0xe2, 0x71, 0xbc, 0x4c, 0x2f,
+	0x03, 0x92, 0x4b, 0x9e, 0x48, 0xc2, 0x63, 0xb8, 0x93, 0xcf, 0x35, 0xde, 0x2f, 0x1c, 0xb3, 0x14,
+	0x77, 0x6f, 0xb7, 0xb8, 0xb9, 0x2d, 0x1f, 0x38, 0xf8, 0x06, 0x6e, 0xe7, 0xa2, 0x9e, 0xb3, 0x52,
+	0x7d, 0x00, 0x35, 0x22, 0xf8, 0x1e, 0x7a, 0xc5, 0x30, 0xe3, 0x83, 0x8c, 0x78, 0x65, 0xca, 0xeb,
+	0x84, 0x3e, 0xc1, 0xa0, 0xf2, 0x30, 0xf0, 0x61, 0xc6, 0xad, 0x7b, 0x34, 0xd7, 0x5c, 0xd1, 0x76,
+	0xe1, 0x71, 0xe0, 0x7e, 0x69, 0x3e, 0xff, 0x67, 0x6b, 0x06, 0xdb, 0x85, 0x28, 0xe6, 0x64, 0xae,
+	0x8a, 0x68, 0x9d, 0x9d, 0x6f, 0x6d, 0xfd, 0xcf, 0x7c, 0xf1, 0x37, 0x00, 0x00, 0xff, 0xff, 0x01,
+	0x50, 0x82, 0x3f, 0x6d, 0x05, 0x00, 0x00,
 }

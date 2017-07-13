@@ -25,10 +25,15 @@ It has these top-level messages:
 	CreateFeatureSetSchemaRequest
 	DeleteFeatureSetSchemaRequest
 	ListModelsRequest
+	FindModelRequest
 	CreateModelRequest
 	DeleteModelRequest
-	CreateModelVersionRequest
-	DeleteModelVersionRequest
+	ListVersionsRequest
+	FindVersionRequest
+	PrimaryVersionRequest
+	SetPrimaryVersionRequest
+	CreateVersionRequest
+	DeleteVersionRequest
 */
 package serving
 
