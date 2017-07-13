@@ -1,0 +1,62 @@
+syntax = "proto3";
+package serving;
+
+import "protos/core.proto";
+
+service FeaturesService {
+    rpc List(ListFeatureSetsRequest) returns (stream FeatureSet);
+    rpc Find(FindFeatureSetRequest) returns (FeatureSet);
+    rpc Create(CreateFeatureSetRequest) returns (FeatureSet);
+    rpc Delete(DeleteFeatureSetRequest) returns (EmptyResponse);
+
+    // Schemas
+    rpc ListSchemas(ListFeatureSetSchemasRequest) returns (stream FeatureSetSchema);
+    rpc FindSchema(FindFeatureSetSchemaRequest) returns (FeatureSetSchema);
+    rpc CreateSchema(CreateFeatureSetSchemaRequest) returns (FeatureSetSchema);
+    rpc DeleteSchema(DeleteFeatureSetSchemaRequest) returns (EmptyResponse);
+}
+
+message FeatureSet {
+    string uid              = 1;
+    string name             = 2;
+    repeated string keys    = 3;
+    int32 created_at        = 4;
+    int32 updated_at        = 5;
+}
+
+message FeatureSetSchema {
+    string uid                  = 1;
+    map<string,string> schema   = 2;
+}
+
+message ListFeatureSetsRequest {}
+
+message FindFeatureSetRequest {
+    string uid = 1;
+}
+
+message CreateFeatureSetRequest {
+    string name             = 1;
+    repeated string keys    = 2;
+}
+
+message DeleteFeatureSetRequest {
+    string uid = 1;
+}
+
+message ListFeatureSetSchemasRequest {
+    string feature_set_uid = 1;
+}
+
+message FindFeatureSetSchemaRequest {
+    string uid = 1;
+}
+
+message CreateFeatureSetSchemaRequest {
+    string feature_set_uid      = 1;
+    map<string,string> schema   = 2;
+}
+
+message DeleteFeatureSetSchemaRequest {
+    string uid = 1;
+}

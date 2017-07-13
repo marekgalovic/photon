@@ -1,30 +1,6 @@
 syntax = "proto3";
 package serving;
 
-message Model {
-    string uid                      = 1;
-    string name                     = 2;
-    string owner                    = 3;
-    int32 created_at                = 4;
-    int32 updated_at                = 5;
-}
-
-enum ModelType {
-    PMML = 0;
-    TENSORFLOW = 1;
-}
-
-message ModelVersion {
-    string uid                          = 1;
-    string name                         = 2;
-    bool is_primary                     = 3;
-    bool is_shadow                      = 4;
-    repeated string request_features    = 5;
-    repeated string stored_features     = 6;
-    int32 created_at                    = 7;
-    int32 updated_at                    = 8;
-}
-
 message ValueInterface {
     oneof value {
         bool value_boolean      = 1;

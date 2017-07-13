@@ -27,6 +27,7 @@ func main() {
     featuresRepository := storage.NewFeaturesRepository(mysql)
     modelsRepository := storage.NewModelsRepository(mysql)
 
+    // Core
     featuresResolver := server.NewFeaturesResolver(featuresRepository)
     modelResolver := server.NewModelResolver(modelsRepository)
     evaluator := server.NewEvaluator(modelResolver, featuresResolver)
@@ -36,7 +37,8 @@ func main() {
     // Services
     grpcServer := grpc.NewServer()
     pb.RegisterEvaluatorServiceServer(grpcServer, services.NewEvaluatorService(evaluator))
-    pb.RegisterModelManagerServiceServer(grpcServer, services.NewModelManagerService(modelsRepository))
+    pb.RegisterModelsServiceServer(grpcServer, services.NewModelsService(modelsRepository))
+    pb.RegisterFeaturesServiceServer(grpcServer, services.NewFeaturesService(featuresRepository))
 
     log.Info("Listening ...")
     grpcServer.Serve(listener)

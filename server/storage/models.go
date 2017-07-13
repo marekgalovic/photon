@@ -41,7 +41,7 @@ func NewModelsRepository(db *Mysql) *ModelsRepository {
 }
 
 func (r *ModelsRepository) List() ([]*Model, error) {
-    rows, err := r.db.Query(`SELECT uid, name, owner, created_at, updated_at FROM models ORDER BY created_at DESC`)
+    rows, err := r.db.Query(`SELECT uid, name, owner, created_at, updated_at FROM models ORDER BY updated_at DESC`)
     if err != nil {
         return nil, err
     }
@@ -132,6 +132,9 @@ func (r *ModelsRepository) PrimaryVersion(modelUid string) (*ModelVersion, error
 }
 
 func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isShadow bool, requestFeatures, storedFeatures []string) (*ModelVersion, error) {
+    if len(requestFeatures) < 1 {
+        return nil, fmt.Errorf("Cannot create model verison with empty request features.")
+    }
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
     _, err := r.db.ExecPrepared(
