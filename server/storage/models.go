@@ -69,7 +69,7 @@ func (r *ModelsRepository) Find(uid string) (*Model, error) {
 }
 
 func (r *ModelsRepository) Create(name, owner string) (*Model, error) {
-    uid := fmt.Sprintf("%s", uuid.NewV1())
+    uid := fmt.Sprintf("%s", uuid.NewV4())
 
     _, err := r.db.ExecPrepared(`INSERT INTO models (uuid, name, owner) VALUES (?,?,?)`, uid, name, owner)
     if err != nil {
@@ -132,7 +132,7 @@ func (r *ModelsRepository) PrimaryVersion(modelUid string) (*ModelVersion, error
 }
 
 func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isShadow bool, requestFeatures, storedFeatures []string) (*ModelVersion, error) {
-    uid := fmt.Sprintf("%s", uuid.NewV1())
+    uid := fmt.Sprintf("%s", uuid.NewV4())
 
     _, err := r.db.ExecPrepared(
         `INSERT INTO model_versions (uid, model_uid, name, is_shadow, request_features, stored_features) VALUES (?,?,?,?,?,?)`,

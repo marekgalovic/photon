@@ -7,7 +7,6 @@ message Model {
     string owner                    = 3;
     int32 created_at                = 4;
     int32 updated_at                = 5;
-    ModelVersion primary_version    = 6;
 }
 
 enum ModelType {
@@ -18,10 +17,12 @@ enum ModelType {
 message ModelVersion {
     string uid                          = 1;
     string name                         = 2;
-    repeated string request_features    = 3;
-    repeated string stored_features     = 4;
-    int32 created_at                    = 5;
-    int32 updated_at                    = 6;
+    bool is_primary                     = 3;
+    bool is_shadow                      = 4;
+    repeated string request_features    = 5;
+    repeated string stored_features     = 6;
+    int32 created_at                    = 7;
+    int32 updated_at                    = 8;
 }
 
 message ValueInterface {

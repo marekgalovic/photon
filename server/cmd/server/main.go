@@ -24,7 +24,7 @@ func main() {
     }
 
     // Stores
-    featuresRepository := storage.NewFeaturesRepository()
+    featuresRepository := storage.NewFeaturesRepository(mysql)
     modelsRepository := storage.NewModelsRepository(mysql)
 
     featuresResolver := server.NewFeaturesResolver(featuresRepository)

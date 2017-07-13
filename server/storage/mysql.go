@@ -28,19 +28,14 @@ func NewMysql(connUrl string) (*Mysql, error) {
     return &Mysql{conn}, nil
 }
 
-func (mysql *Mysql) ExecPrepared(query string, args ...interface{}) (int64, error) {
+func (mysql *Mysql) ExecPrepared(query string, args ...interface{}) (sql.Result, error) {
     stmt, err := mysql.Prepare(query)
     if err != nil {
-        return 0, err
+        return nil, err
     }
     defer stmt.Close()
 
-    result, err := stmt.Exec(args...)
-    if err != nil {
-        return 0, err
-    }
-
-    return result.RowsAffected()
+    return stmt.Exec(args...)
 }
 
 func (mysql *Mysql) QueryPrepared(query string, args ...interface{}) (*sql.Rows, error) {
