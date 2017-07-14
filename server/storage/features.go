@@ -5,7 +5,9 @@ import (
     "time";
     "strings";
 
-    "github.com/satori/go.uuid"
+    "github.com/marekgalovic/serving/server/metrics";
+
+    "github.com/satori/go.uuid";
 )
 
 type FeatureSet struct {
@@ -18,7 +20,13 @@ type FeatureSet struct {
 
 type FeatureSetSchema struct {
     Uid string
-    Schema map[string]string
+    Fields []*FeatureSetSchemaField
+    CreatedAt time.Time
+}
+
+type FeatureSetSchemaField struct {
+    Name string
+    ValueType string
 }
 
 type FeaturesRepository struct {
@@ -30,6 +38,8 @@ func NewFeaturesRepository(db *Mysql) *FeaturesRepository {
 }
 
 func (r *FeaturesRepository) List() ([]*FeatureSet, error) {
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:list"})()
+
     rows, err := r.db.Query(`SELECT uid, name, keys, created_at, updated_at FROM feature_sets ORDER BY updated_at DESC`)
     if err != nil {
         return nil, err
@@ -49,6 +59,8 @@ func (r *FeaturesRepository) List() ([]*FeatureSet, error) {
 }
 
 func (r *FeaturesRepository) Find(uid string) (*FeatureSet, error) {
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:find"})()
+
     row, err := r.db.QueryRowPrepared(`SELECT uid, name, keys, created_at, updated_at FROM feature_sets WHERE uid = ?`, uid)
     if err != nil {
         return nil, err
@@ -61,6 +73,8 @@ func (r *FeaturesRepository) Create(name string, keys []string) (*FeatureSet, er
     if len(keys) < 1 {
         return nil, fmt.Errorf("Cannot create feature set with no keys")
     }
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:create"})()
+
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
     _, err := r.db.ExecPrepared(`INSERT INTO feature_sets (uid, name, keys) VALUES (?,?,?)`, uid, name, strings.Join(keys, ","))
@@ -72,6 +86,8 @@ func (r *FeaturesRepository) Create(name string, keys []string) (*FeatureSet, er
 }
 
 func (r *FeaturesRepository) Delete(uid string) error {
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:delete"})()
+
     _, err := r.db.ExecPrepared(`DELETE FROM feature_sets WHERE uid = ?`, uid)
     
     return err
@@ -90,7 +106,9 @@ func (r *FeaturesRepository) scanFeatureSet(rows Scannable) (*FeatureSet, error)
 }
 
 func (r *FeaturesRepository) ListSchemas(setUid string) ([]*FeatureSetSchema, error) {
-    rows, err := r.db.QueryPrepared(`SELECT uid, schema FROM feature_set_schemas WHERE feature_set_uid = ? ORDER BY updated_at DESC`, setUid)
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:list_schemas"})()
+
+    rows, err := r.db.QueryPrepared(`SELECT uid, created_at FROM feature_set_schemas WHERE feature_set_uid = ? ORDER BY updated_at DESC`, setUid)
     if err != nil {
         return nil, err
     }
@@ -109,18 +127,49 @@ func (r *FeaturesRepository) ListSchemas(setUid string) ([]*FeatureSetSchema, er
 }
 
 func (r *FeaturesRepository) FindSchema(uid string) (*FeatureSetSchema, error) {
-    row, err := r.db.QueryRowPrepared(`SELECT uid, schema FROM feature_set_schemas WHERE uid = ?`, uid)
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:find_schema"})()
+
+    row, err := r.db.QueryRowPrepared(`SELECT uid, created_at FROM feature_set_schemas WHERE uid = ?`, uid)
+    if err != nil {
+        return nil, err
+    }
+    schema, err := r.scanFeatureSetSchema(row)
+    if err != nil {
+        return nil, err
+    }
+    schema.Fields, err = r.schemaFields(schema.Uid)
     if err != nil {
         return nil, err
     }
 
-    return r.scanFeatureSetSchema(row)
+    return schema, nil
+}
+
+func (r *FeaturesRepository) LatestSchema(featureSetUid string) (*FeatureSetSchema, error) {
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:find_schema"})()
+
+    row, err := r.db.QueryRowPrepared(`SELECT uid, created_at FROM feature_set_schemas WHERE feature_set_uid = ? ORDER BY created_at DESC LIMIT 1`, featureSetUid)
+    if err != nil {
+        return nil, err
+    }
+    schema, err := r.scanFeatureSetSchema(row)
+    if err != nil {
+        return nil, err
+    }
+    schema.Fields, err = r.schemaFields(schema.Uid)
+    if err != nil {
+        return nil, err
+    }
+
+    return schema, nil
 }
 
 func (r *FeaturesRepository) CreateSchema(setUid string, schema map[string]string) (*FeatureSetSchema, error) {
     if len(schema) < 1 {
         return nil, fmt.Errorf("Cannot create feature set schema with no fields")
     }
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:create_schema"})()
+
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
     _, err := r.db.ExecPrepared(`INSERT INTO feature_set_schemas (uid, schema) VALUES (?,?)`, uid, r.serializeSchema(schema))
@@ -132,6 +181,8 @@ func (r *FeaturesRepository) CreateSchema(setUid string, schema map[string]strin
 }
 
 func (r *FeaturesRepository) DeleteSchema(uid string) error {
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:delete_schema"})()
+
     _, err := r.db.ExecPrepared(`DELETE FROM feature_set_schemas WHERE uid = ?`, uid)
     
     return err
@@ -159,14 +210,29 @@ func (r *FeaturesRepository) parseSchema(schema string) map[string]string {
     return parsedSchema
 }
 
-func (r *FeaturesRepository) scanFeatureSetSchema(rows Scannable) (*FeatureSetSchema, error) {
-    schema := &FeatureSetSchema{}
-    var serializedSchema string
-
-    if err := rows.Scan(&schema.Uid, &serializedSchema); err != nil {
+func (r *FeaturesRepository) schemaFields(schemaUid string) ([]*FeatureSetSchemaField, error) {
+    rows, err := r.db.Query(`SELECT name, value_type FROM feature_set_schema_fields WHERE feature_set_schema_uid = ?`, schemaUid)
+    if err != nil {
         return nil, err
     }
-    schema.Schema = r.parseSchema(serializedSchema)
+    defer rows.Close()
 
+    fields := make([]*FeatureSetSchemaField, 0)
+    for rows.Next() {
+        field := &FeatureSetSchemaField{}
+        if err := rows.Scan(&field.Name, &field.ValueType); err != nil {
+            return nil, err
+        }
+        fields = append(fields, field)
+    }
+
+    return fields, nil
+}
+
+func (r *FeaturesRepository) scanFeatureSetSchema(rows Scannable) (*FeatureSetSchema, error) {
+    schema := &FeatureSetSchema{}
+    if err := rows.Scan(&schema.Uid, &schema.CreatedAt); err != nil {
+        return nil, err
+    }
     return schema, nil
 }

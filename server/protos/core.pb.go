@@ -17,6 +17,7 @@ It has these top-level messages:
 	EvaluationResponse
 	FeatureSet
 	FeatureSetSchema
+	FeatureSetSchemaField
 	ListFeatureSetsRequest
 	FindFeatureSetRequest
 	CreateFeatureSetRequest
@@ -27,6 +28,7 @@ It has these top-level messages:
 	DeleteFeatureSetSchemaRequest
 	Model
 	ModelVersion
+	ModelFeature
 	ListModelsRequest
 	FindModelRequest
 	CreateModelRequest

@@ -35,10 +35,15 @@ message ModelVersion {
     string name                         = 2;
     bool is_primary                     = 3;
     bool is_shadow                      = 4;
-    repeated string request_features    = 5;
-    repeated string stored_features     = 6;
+    repeated ModelFeature request_features    = 5;
+    repeated ModelFeature precomputed_features     = 6;
     int32 created_at                    = 7;
     int32 updated_at                    = 8;
+}
+
+message ModelFeature {
+    string name = 1;
+    bool required = 2;
 }
 
 message ListModelsRequest {}

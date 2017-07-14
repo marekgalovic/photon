@@ -22,6 +22,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
+    defer mysql.Close()
 
     // Stores
     featuresRepository := storage.NewFeaturesRepository(mysql)
@@ -32,7 +33,7 @@ func main() {
     modelResolver := server.NewModelResolver(modelsRepository)
     evaluator := server.NewEvaluator(modelResolver, featuresResolver)
 
-    log.Info(modelResolver.GetModel("abcd"))
+    log.Info(evaluator.Evaluate("f3dbe4f8-68a3-11e7-ab75-0242ac120002", map[string]interface{}{"x1": 1, "x2": 2.83, "x3": "N"}))
 
     // Services
     grpcServer := grpc.NewServer()

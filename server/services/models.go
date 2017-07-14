@@ -126,9 +126,26 @@ func (service *ModelsService) versionToVersionProto(version *storage.ModelVersio
         Name: version.Name,
         IsPrimary: version.IsPrimary,
         IsShadow: version.IsShadow,
-        RequestFeatures: version.RequestFeatures,
-        StoredFeatures: version.StoredFeatures,
+        RequestFeatures: service.requestFeaturesToModelFeatureProtos(version.RequestFeatures),
+        PrecomputedFeatures: service.precomputedFeaturesToModelFeatureProtos(version.PrecomputedFeatures),
         CreatedAt: int32(version.CreatedAt.Unix()),
-        UpdatedAt: int32(version.UpdatedAt.Unix()),
     }
 } 
+
+func (service *ModelsService) requestFeaturesToModelFeatureProtos(features []*storage.ModelFeature) []*pb.ModelFeature {
+    protos := make([]*pb.ModelFeature, 0, len(features))
+    for i, feature := range features {
+        protos[i] = &pb.ModelFeature{Name: feature.Name, Required: feature.Required}
+    }
+    return protos
+}
+
+func (service *ModelsService) precomputedFeaturesToModelFeatureProtos(featuresMap map[string][]*storage.ModelFeature) []*pb.ModelFeature {
+    protos := make([]*pb.ModelFeature, 0)
+    for _, features := range featuresMap {
+        for _, feature := range features {
+            protos = append(protos, &pb.ModelFeature{Name: feature.Name, Required: feature.Required})
+        }
+    }
+    return protos
+}

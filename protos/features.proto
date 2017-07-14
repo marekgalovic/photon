@@ -26,7 +26,13 @@ message FeatureSet {
 
 message FeatureSetSchema {
     string uid                  = 1;
-    map<string,string> schema   = 2;
+    int32 created_at            = 2;
+    repeated FeatureSetSchemaField fields = 3;
+}
+
+message FeatureSetSchemaField {
+    string name = 1;
+    string value_type = 2;
 }
 
 message ListFeatureSetsRequest {}

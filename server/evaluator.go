@@ -16,19 +16,20 @@ func NewEvaluator(modelResolver *ModelResolver, featuresResolver *FeaturesResolv
     }
 }
 
-func (e *Evaluator) Evaluate(model_uid string, features map[string]interface{}) (map[string]interface{}, error) {
+func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interface{}) (map[string]interface{}, error) {
     model, version, err := e.modelResolver.GetModel(model_uid)
+    if err != nil {
+        return nil, err
+    }
+
+    features, err := e.featuresResolver.Resolve(version, requestParams)
     if err != nil {
         return nil, err
     }
 
     log.Info(model)
     log.Info(version)
-
-    // features, err = e.featuresResolver.Resolve(model.PrimaryVersion, features)
-    // if err != nil {
-    //     return nil, err
-    // }
+    log.Info(features)
 
     return nil, nil
 }

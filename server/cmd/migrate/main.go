@@ -6,7 +6,6 @@ import (
     "time";
     "path/filepath";
 
-    // _ "github.com/go-sql-driver/mysql"
     "github.com/mattes/migrate";
     _ "github.com/mattes/migrate/database/mysql"
     _ "github.com/mattes/migrate/source/file"

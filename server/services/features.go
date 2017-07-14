@@ -114,6 +114,6 @@ func (service *FeaturesService) DeleteSchema(ctx context.Context, req *pb.Delete
 func (service *FeaturesService) schemaToSchemaProto(schema *storage.FeatureSetSchema) *pb.FeatureSetSchema {
     return &pb.FeatureSetSchema {
         Uid: schema.Uid,
-        Schema: schema.Schema,
+        CreatedAt: int32(schema.CreatedAt.Unix()),
     }
 }
