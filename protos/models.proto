@@ -31,19 +31,19 @@ enum ModelType {
 }
 
 message ModelVersion {
-    string uid                          = 1;
-    string name                         = 2;
-    bool is_primary                     = 3;
-    bool is_shadow                      = 4;
-    repeated ModelFeature request_features    = 5;
-    repeated ModelFeature precomputed_features     = 6;
-    int32 created_at                    = 7;
-    int32 updated_at                    = 8;
+    string uid                                  = 1;
+    string name                                 = 2;
+    bool is_primary                             = 3;
+    bool is_shadow                              = 4;
+    repeated ModelFeature request_features      = 5;
+    repeated ModelFeature precomputed_features  = 6;
+    int32 created_at                            = 7;
+    int32 updated_at                            = 8;
 }
 
 message ModelFeature {
-    string name = 1;
-    bool required = 2;
+    string name     = 1;
+    bool required   = 2;
 }
 
 message ListModelsRequest {}
@@ -53,8 +53,8 @@ message FindModelRequest {
 }
 
 message CreateModelRequest {
-    string name = 1;
-    string owner = 2;
+    string name     = 1;
+    string owner    = 2;
 }
 
 message DeleteModelRequest {
@@ -70,17 +70,21 @@ message FindVersionRequest {
 }
 
 message SetPrimaryVersionRequest {
-    string model_uid = 1;
-    string uid = 2;
+    string model_uid    = 1;
+    string uid          = 2;
 }
 
 message CreateVersionRequest {
-    string model_uid = 1;
-    string name = 2;
-    bool is_primary = 3;
-    bool is_shadow = 4;
-    repeated string request_features = 5;
-    repeated string stored_features = 6;
+    string model_uid                                            = 1;
+    string name                                                 = 2;
+    bool is_primary                                             = 3;
+    bool is_shadow                                              = 4;
+    repeated ModelFeature request_features                      = 5;
+    map<string,PrecomputedFeaturesSet> precomputed_features     = 6;
+}
+
+message PrecomputedFeaturesSet {
+    repeated ModelFeature features = 1;
 }
 
 message DeleteVersionRequest {

@@ -103,7 +103,7 @@ func (service *ModelsService) SetPrimaryVersion(ctx context.Context, req *pb.Set
 }
 
 func (service *ModelsService) CreateVersion(ctx context.Context, req *pb.CreateVersionRequest) (*pb.ModelVersion, error) {
-    version, err := service.modelsRepository.CreateVersion(req.ModelUid, req.Name, req.IsPrimary, req.IsShadow, req.RequestFeatures, req.StoredFeatures)
+    version, err := service.modelsRepository.CreateVersion(req.ModelUid, req.Name, req.IsPrimary, req.IsShadow, service.requestFeaturesProtoToRequestFeatures(req.RequestFeatures), service.precomputedFeaturesProtoToPrecomputedFeatures(req.PrecomputedFeatures))
     if err != nil {
         return nil, err
     }
@@ -140,6 +140,14 @@ func (service *ModelsService) requestFeaturesToModelFeatureProtos(features []*st
     return protos
 }
 
+func (service *ModelsService) requestFeaturesProtoToRequestFeatures(protos []*pb.ModelFeature) []*storage.ModelFeature {
+    features := make([]*storage.ModelFeature, 0, len(protos))
+    for i, proto := range protos {
+        features[i] = &storage.ModelFeature{Name: proto.Name, Required: proto.Required}
+    }
+    return features
+}
+
 func (service *ModelsService) precomputedFeaturesToModelFeatureProtos(featuresMap map[string][]*storage.ModelFeature) []*pb.ModelFeature {
     protos := make([]*pb.ModelFeature, 0)
     for _, features := range featuresMap {
@@ -148,4 +156,17 @@ func (service *ModelsService) precomputedFeaturesToModelFeatureProtos(featuresMa
         }
     }
     return protos
+}
+
+func (service *ModelsService) precomputedFeaturesProtoToPrecomputedFeatures(protos map[string]*pb.PrecomputedFeaturesSet) map[string][]*storage.ModelFeature {
+    features := make(map[string][]*storage.ModelFeature, 0)
+    for featureSetUid, precomputedFeaturesSet := range protos {
+        if _, exists := features[featureSetUid]; !exists {
+            features[featureSetUid] = make([]*storage.ModelFeature, len(precomputedFeaturesSet.Features))
+        }
+        for _, modelFeatureProto := range precomputedFeaturesSet.Features {
+            features[featureSetUid] = append(features[featureSetUid], &storage.ModelFeature{Name: modelFeatureProto.Name, Required: modelFeatureProto.Required})
+        }
+    }
+    return features
 }

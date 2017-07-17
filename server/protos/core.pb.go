@@ -37,6 +37,7 @@ It has these top-level messages:
 	FindVersionRequest
 	SetPrimaryVersionRequest
 	CreateVersionRequest
+	PrecomputedFeaturesSet
 	DeleteVersionRequest
 */
 package serving

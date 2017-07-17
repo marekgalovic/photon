@@ -146,7 +146,7 @@ func (r *FeaturesRepository) FindSchema(uid string) (*FeatureSetSchema, error) {
 }
 
 func (r *FeaturesRepository) LatestSchema(featureSetUid string) (*FeatureSetSchema, error) {
-    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:find_schema"})()
+    defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:latest_schema"})()
 
     row, err := r.db.QueryRowPrepared(`SELECT uid, created_at FROM feature_set_schemas WHERE feature_set_uid = ? ORDER BY created_at DESC LIMIT 1`, featureSetUid)
     if err != nil {
@@ -164,20 +164,52 @@ func (r *FeaturesRepository) LatestSchema(featureSetUid string) (*FeatureSetSche
     return schema, nil
 }
 
-func (r *FeaturesRepository) CreateSchema(setUid string, schema map[string]string) (*FeatureSetSchema, error) {
-    if len(schema) < 1 {
+func (r *FeaturesRepository) CreateSchema(setUid string, fields map[string]string) (*FeatureSetSchema, error) {
+    if len(fields) < 1 {
         return nil, fmt.Errorf("Cannot create feature set schema with no fields")
     }
     defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:create_schema"})()
 
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
-    _, err := r.db.ExecPrepared(`INSERT INTO feature_set_schemas (uid, schema) VALUES (?,?)`, uid, r.serializeSchema(schema))
+    tx, err := r.db.Begin()
     if err != nil {
         return nil, err
     }
 
+    createSetSchemaStmt, err := tx.Prepare(`INSERT INTO feature_set_schemas (uid, feature_set_uid) VALUES (?,?)`)
+    if err != nil {
+        return nil, err
+    }
+    defer createSetSchemaStmt.Close()
+
+    if _, err = createSetSchemaStmt.Exec(uid, setUid); err != nil {
+        return nil, err
+    }
+
+    createSchemaFieldsStmt, err := tx.Prepare(fmt.Sprintf(`INSERT INTO feature_set_schema_fields (feature_set_schema_uid, name, value_type) VALUES %s`, strings.TrimSuffix(strings.Repeat("(?,?,?),", len(fields)), ",")))
+    if err != nil {
+        return nil, err
+    }
+    defer createSchemaFieldsStmt.Close()
+
+    if _, err = createSchemaFieldsStmt.Exec(r.schemaFieldsValues(uid, fields)...); err != nil {
+        return nil, err
+    }
+
+    if err = tx.Commit(); err != nil {
+        return nil, err
+    }
+
     return r.FindSchema(uid)
+}
+
+func (r *FeaturesRepository) schemaFieldsValues(schemaUid string, fields map[string]string) []interface{} {
+    values := make([]interface{}, 0, len(fields)*3)
+    for fieldName, fieldValueType := range fields {
+        values = append(values, schemaUid, fieldName, fieldValueType)
+    }
+    return values
 }
 
 func (r *FeaturesRepository) DeleteSchema(uid string) error {
@@ -186,28 +218,6 @@ func (r *FeaturesRepository) DeleteSchema(uid string) error {
     _, err := r.db.ExecPrepared(`DELETE FROM feature_set_schemas WHERE uid = ?`, uid)
     
     return err
-}
-
-func (r *FeaturesRepository) serializeSchema(schema map[string]string) string {
-    fields := make([]string, 0, len(schema))
-
-    for key, valueType := range schema {
-        fields = append(fields, fmt.Sprintf("%s->%s", key, valueType))
-    }
-
-    return strings.Join(fields, ",")
-}
-
-func (r *FeaturesRepository) parseSchema(schema string) map[string]string {
-    fields := strings.Split(schema, ",")
-    parsedSchema := make(map[string]string, len(fields))
-
-    for _, field := range fields {
-        fieldDef := strings.Split(field, "->")
-        parsedSchema[fieldDef[0]] = fieldDef[1]
-    }
-
-    return parsedSchema
 }
 
 func (r *FeaturesRepository) schemaFields(schemaUid string) ([]*FeatureSetSchemaField, error) {

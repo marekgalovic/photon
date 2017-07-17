@@ -4,7 +4,7 @@ import (
     "fmt";
     "time";
     "strings";
-    "database/sql";
+    // "database/sql";
 
     "github.com/marekgalovic/serving/server/metrics";
 
@@ -172,18 +172,60 @@ func (r *ModelsRepository) PrimaryVersion(modelUid string) (*ModelVersion, error
     return version, nil
 }
 
-func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isShadow bool, requestFeatures, storedFeatures []string) (*ModelVersion, error) {
+func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isShadow bool, requestFeatures []*ModelFeature, precomputedFeatures map[string][]*ModelFeature) (*ModelVersion, error) {
     if len(requestFeatures) < 1 {
         return nil, fmt.Errorf("Cannot create model verison with empty request features.")
     }
     defer metrics.Runtime("queries.runtime", []string{"repository:models", "query:create_version"})()
+
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
-    _, err := r.db.ExecPrepared(
-        `INSERT INTO model_versions (uid, model_uid, name, is_shadow, request_features, stored_features) VALUES (?,?,?,?,?,?)`,
-        uid, modelUid, name, isShadow, strings.Join(requestFeatures, ","), strings.Join(storedFeatures, ","),
-    )
+    tx, err := r.db.Begin()
     if err != nil {
+        return nil, err
+    }
+
+    createVersionStmt, err := tx.Prepare(`INSERT INTO model_versions (uid, model_uid, name, is_shadow) VALUES (?,?,?,?)`)
+    if err != nil {
+        return nil, err
+    }
+    defer createVersionStmt.Close()
+    
+    if _, err = createVersionStmt.Exec(uid, modelUid, name, isShadow); err != nil {
+        return nil, err
+    }
+
+    createVersionRequestFeaturesStmt, err := tx.Prepare(fmt.Sprintf(
+        `INSERT INTO model_version_request_features (model_version_uid, name, required) VALUES %s`,
+        strings.TrimSuffix(strings.Repeat("(?,?,?),", len(requestFeatures)), ","),
+    ))
+    if err != nil {
+        return nil, err
+    }
+    defer createVersionRequestFeaturesStmt.Close()
+
+    if _, err = createVersionRequestFeaturesStmt.Exec(r.versionRequestFeaturesValues(uid, requestFeatures)...); err != nil {
+        return nil, err 
+    }
+
+
+    precomputedFeaturesCount, precomputedFeaturesValues := r.versionPrecomputedFeaturesValues(uid, precomputedFeatures)
+    if precomputedFeaturesCount > 0 {
+        createVersionPrecomputedFeaturesStmt, err := tx.Prepare(fmt.Sprintf(
+            `INSERT INTO model_version_request_features (model_version_uid, feature_set_uid, name, required) VALUES %s`,
+            strings.TrimSuffix(strings.Repeat("(?,?,?,?),", precomputedFeaturesCount), ","),
+        ))
+        if err != nil {
+            return nil, err
+        }
+        defer createVersionPrecomputedFeaturesStmt.Close()
+
+        if _, err = createVersionPrecomputedFeaturesStmt.Exec(precomputedFeaturesValues...); err != nil {
+            return nil, err
+        }
+    }
+
+    if err = tx.Commit(); err != nil {
         return nil, err
     }
 
@@ -195,6 +237,26 @@ func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isSha
     }
 
     return r.FindVersion(uid)
+}
+
+func (r *ModelsRepository) versionRequestFeaturesValues(uid string, features []*ModelFeature) []interface{} {
+    values := make([]interface{}, 0, len(features)*3)
+    for _, feature := range features {
+        values = append(values, uid, feature.Name, feature.Required)
+    }
+    return values
+}
+
+func (r *ModelsRepository) versionPrecomputedFeaturesValues(uid string, setFeatures map[string][]*ModelFeature) (int, []interface{}) {
+    values := make([]interface{}, 0)
+    n := 0
+    for featureSetUid, features := range setFeatures {
+        for _, feature := range features {
+            n += 1
+            values = append(values, uid, featureSetUid, feature.Name, feature.Required)
+        }
+    }
+    return n, values
 }
 
 func (r *ModelsRepository) DeleteVersion(uid string) error {
@@ -248,21 +310,10 @@ func (r *ModelsRepository) SetPrimaryVersion(modelUid, versionUid string) error 
 
 func (r *ModelsRepository) scanVersion(rows Scannable) (*ModelVersion, error) {
     version := &ModelVersion{}
-    var requestFeatures sql.NullString
-    var storedFeatures sql.NullString
 
-    if err := rows.Scan(&version.Uid, &version.Name, &version.IsPrimary, &version.IsShadow, &requestFeatures, &storedFeatures, &version.CreatedAt); err != nil {
+    if err := rows.Scan(&version.Uid, &version.Name, &version.IsPrimary, &version.IsShadow, &version.CreatedAt); err != nil {
         return nil, err
     }
-
-    _ = requestFeatures
-    _ = storedFeatures
-    // if requestFeatures.Valid {
-    //     version.RequestFeatures = strings.Split(requestFeatures.String, ",")
-    // }
-    // if storedFeatures.Valid {
-    //     version.StoredFeatures = strings.Split(storedFeatures.String, ",")
-    // }
 
     return version, nil
 }
