@@ -40,7 +40,7 @@ func NewFeaturesRepository(db *Mysql) *FeaturesRepository {
 func (r *FeaturesRepository) List() ([]*FeatureSet, error) {
     defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:list"})()
 
-    rows, err := r.db.Query(`SELECT uid, name, keys, created_at, updated_at FROM feature_sets ORDER BY updated_at DESC`)
+    rows, err := r.db.Query(`SELECT uid, name, lookup_keys, created_at, updated_at FROM feature_sets ORDER BY updated_at DESC`)
     if err != nil {
         return nil, err
     }
@@ -61,7 +61,7 @@ func (r *FeaturesRepository) List() ([]*FeatureSet, error) {
 func (r *FeaturesRepository) Find(uid string) (*FeatureSet, error) {
     defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:find"})()
 
-    row, err := r.db.QueryRowPrepared(`SELECT uid, name, keys, created_at, updated_at FROM feature_sets WHERE uid = ?`, uid)
+    row, err := r.db.QueryRowPrepared(`SELECT uid, name, lookup_keys, created_at, updated_at FROM feature_sets WHERE uid = ?`, uid)
     if err != nil {
         return nil, err
     }
@@ -77,7 +77,7 @@ func (r *FeaturesRepository) Create(name string, keys []string) (*FeatureSet, er
 
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
-    _, err := r.db.ExecPrepared(`INSERT INTO feature_sets (uid, name, keys) VALUES (?,?,?)`, uid, name, strings.Join(keys, ","))
+    _, err := r.db.ExecPrepared(`INSERT INTO feature_sets (uid, name, lookup_keys) VALUES (?,?,?)`, uid, name, strings.Join(keys, ","))
     if err != nil {
         return nil, err
     }

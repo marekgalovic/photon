@@ -4,11 +4,11 @@ import (
     "fmt";
     "time";
     "strings";
-    // "database/sql";
+    "database/sql";
 
     "github.com/marekgalovic/serving/server/metrics";
 
-    "github.com/satori/go.uuid"
+    "github.com/satori/go.uuid";
 )
 
 type Model struct {
@@ -81,7 +81,7 @@ func (r *ModelsRepository) Create(name, owner string) (*Model, error) {
 
     uid := fmt.Sprintf("%s", uuid.NewV4())
 
-    _, err := r.db.ExecPrepared(`INSERT INTO models (uuid, name, owner) VALUES (?,?,?)`, uid, name, owner)
+    _, err := r.db.ExecPrepared(`INSERT INTO models (uid, name, owner) VALUES (?,?,?)`, uid, name, owner)
     if err != nil {
         return nil, err
     }
@@ -108,7 +108,7 @@ func (r *ModelsRepository) scanModel(rows Scannable) (*Model, error) {
 func (r *ModelsRepository) ListVersions(modelUid string) ([]*ModelVersion, error) {
     defer metrics.Runtime("queries.runtime", []string{"repository:models", "query:list_versions"})()
 
-    rows, err := r.db.QueryPrepared(`SELECT uid, name, is_primary, is_shadow, request_features, stored_features, created_at FROM model_versions WHERE model_uid = ?`, modelUid)
+    rows, err := r.db.QueryPrepared(`SELECT uid, name, is_primary, is_shadow, created_at FROM model_versions WHERE model_uid = ?`, modelUid)
     if err != nil {
         return nil, err
     }
@@ -129,7 +129,7 @@ func (r *ModelsRepository) ListVersions(modelUid string) ([]*ModelVersion, error
 func (r *ModelsRepository) FindVersion(uid string) (*ModelVersion, error) {
     defer metrics.Runtime("queries.runtime", []string{"repository:models", "query:find_version"})()
 
-    row, err := r.db.QueryRowPrepared(`SELECT uid, name, is_primary, is_shadow, request_features, stored_features, created_at FROM model_versions WHERE uid = ?`, uid)
+    row, err := r.db.QueryRowPrepared(`SELECT uid, name, is_primary, is_shadow, created_at FROM model_versions WHERE uid = ?`, uid)
     if err != nil {
         return nil, err
     }
@@ -152,7 +152,7 @@ func (r *ModelsRepository) FindVersion(uid string) (*ModelVersion, error) {
 func (r *ModelsRepository) PrimaryVersion(modelUid string) (*ModelVersion, error) {
     defer metrics.Runtime("queries.runtime", []string{"repository:models", "query:primary_version"})()
 
-    row, err := r.db.QueryRowPrepared(`SELECT uid, name, is_primary, is_shadow, request_features, stored_features, created_at FROM model_versions WHERE model_uid = ? AND is_primary = 1`, modelUid)
+    row, err := r.db.QueryRowPrepared(`SELECT uid, name, is_primary, is_shadow, created_at FROM model_versions WHERE model_uid = ? AND is_primary = 1`, modelUid)
     if err != nil {
         return nil, err
     }
@@ -189,40 +189,18 @@ func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isSha
     if err != nil {
         return nil, err
     }
-    defer createVersionStmt.Close()
+    defer createVersionStmt.Close()    
     
     if _, err = createVersionStmt.Exec(uid, modelUid, name, isShadow); err != nil {
         return nil, err
     }
 
-    createVersionRequestFeaturesStmt, err := tx.Prepare(fmt.Sprintf(
-        `INSERT INTO model_version_request_features (model_version_uid, name, required) VALUES %s`,
-        strings.TrimSuffix(strings.Repeat("(?,?,?),", len(requestFeatures)), ","),
-    ))
-    if err != nil {
+    if err = r.createVersionRequestFeatures(tx, uid, requestFeatures); err != nil {
         return nil, err
     }
-    defer createVersionRequestFeaturesStmt.Close()
 
-    if _, err = createVersionRequestFeaturesStmt.Exec(r.versionRequestFeaturesValues(uid, requestFeatures)...); err != nil {
-        return nil, err 
-    }
-
-
-    precomputedFeaturesCount, precomputedFeaturesValues := r.versionPrecomputedFeaturesValues(uid, precomputedFeatures)
-    if precomputedFeaturesCount > 0 {
-        createVersionPrecomputedFeaturesStmt, err := tx.Prepare(fmt.Sprintf(
-            `INSERT INTO model_version_request_features (model_version_uid, feature_set_uid, name, required) VALUES %s`,
-            strings.TrimSuffix(strings.Repeat("(?,?,?,?),", precomputedFeaturesCount), ","),
-        ))
-        if err != nil {
-            return nil, err
-        }
-        defer createVersionPrecomputedFeaturesStmt.Close()
-
-        if _, err = createVersionPrecomputedFeaturesStmt.Exec(precomputedFeaturesValues...); err != nil {
-            return nil, err
-        }
+    if err = r.createVersionPrecomputedFeatures(tx, uid, precomputedFeatures); err != nil {
+        return nil, err
     }
 
     if err = tx.Commit(); err != nil {
@@ -239,12 +217,45 @@ func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isSha
     return r.FindVersion(uid)
 }
 
+func (r *ModelsRepository) createVersionRequestFeatures(tx *sql.Tx, uid string, features []*ModelFeature) error {
+    stmt, err := tx.Prepare(fmt.Sprintf(
+        `INSERT INTO model_version_request_features (model_version_uid, name, required) VALUES %s`,
+        strings.TrimSuffix(strings.Repeat("(?,?,?),", len(features)), ","),
+    ))
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    _, err = stmt.Exec(r.versionRequestFeaturesValues(uid, features)...)
+    return err
+}
+
 func (r *ModelsRepository) versionRequestFeaturesValues(uid string, features []*ModelFeature) []interface{} {
     values := make([]interface{}, 0, len(features)*3)
     for _, feature := range features {
         values = append(values, uid, feature.Name, feature.Required)
     }
     return values
+}
+
+func (r *ModelsRepository) createVersionPrecomputedFeatures(tx *sql.Tx, uid string, features map[string][]*ModelFeature) error {
+    precomputedFeaturesCount, precomputedFeaturesValues := r.versionPrecomputedFeaturesValues(uid, features)
+    if precomputedFeaturesCount < 1 {
+        return nil
+    }
+
+    stmt, err := tx.Prepare(fmt.Sprintf(
+        `INSERT INTO model_version_precomputed_features (model_version_uid, feature_set_uid, name, required) VALUES %s`,
+        strings.TrimSuffix(strings.Repeat("(?,?,?,?),", precomputedFeaturesCount), ","),
+    ))
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    _, err = stmt.Exec(precomputedFeaturesValues...)
+    return err
 }
 
 func (r *ModelsRepository) versionPrecomputedFeaturesValues(uid string, setFeatures map[string][]*ModelFeature) (int, []interface{}) {

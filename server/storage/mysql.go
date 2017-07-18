@@ -1,7 +1,7 @@
 package storage
 
 import (
-    // "fmt";
+    "fmt";
     "database/sql";
 
     _ "github.com/go-sql-driver/mysql"
@@ -89,6 +89,32 @@ func (mysql *Mysql) QueryDynamic(query string, args ...interface{}) ([]map[strin
     }
 
     return result, nil
+}
+
+func (mysql *Mysql) Count(tableName string) (int, error) {
+    var count int
+    if err := mysql.QueryRow(fmt.Sprintf(`SELECT count(1) FROM %s`, tableName)).Scan(&count); err != nil {
+        return 0, err
+    }
+    return count, nil
+}
+
+func (mysql *Mysql) ShowTables() ([]string, error) {
+    rows, err := mysql.Query(`SHOW TABLES`)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    tables := make([]string, 0)
+    for rows.Next() {
+        var tableName string
+        if err = rows.Scan(&tableName); err != nil {
+            return nil, err
+        }
+        tables = append(tables, tableName)
+    }
+    return tables, nil
 }
 
 func (mysql *Mysql) blankRow(size int) []interface{} {
