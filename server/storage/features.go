@@ -27,6 +27,7 @@ type FeatureSetSchema struct {
 type FeatureSetSchemaField struct {
     Name string
     ValueType string
+    Nullable bool
 }
 
 type FeaturesRepository struct {
@@ -108,7 +109,7 @@ func (r *FeaturesRepository) scanFeatureSet(rows Scannable) (*FeatureSet, error)
 func (r *FeaturesRepository) ListSchemas(setUid string) ([]*FeatureSetSchema, error) {
     defer metrics.Runtime("queries.runtime", []string{"repository:features", "query:list_schemas"})()
 
-    rows, err := r.db.QueryPrepared(`SELECT uid, created_at FROM feature_set_schemas WHERE feature_set_uid = ? ORDER BY updated_at DESC`, setUid)
+    rows, err := r.db.QueryPrepared(`SELECT uid, created_at FROM feature_set_schemas WHERE feature_set_uid = ? ORDER BY created_at DESC`, setUid)
     if err != nil {
         return nil, err
     }
@@ -164,7 +165,7 @@ func (r *FeaturesRepository) LatestSchema(featureSetUid string) (*FeatureSetSche
     return schema, nil
 }
 
-func (r *FeaturesRepository) CreateSchema(setUid string, fields map[string]string) (*FeatureSetSchema, error) {
+func (r *FeaturesRepository) CreateSchema(setUid string, fields []*FeatureSetSchemaField) (*FeatureSetSchema, error) {
     if len(fields) < 1 {
         return nil, fmt.Errorf("Cannot create feature set schema with no fields")
     }
@@ -187,7 +188,7 @@ func (r *FeaturesRepository) CreateSchema(setUid string, fields map[string]strin
         return nil, err
     }
 
-    createSchemaFieldsStmt, err := tx.Prepare(fmt.Sprintf(`INSERT INTO feature_set_schema_fields (feature_set_schema_uid, name, value_type) VALUES %s`, strings.TrimSuffix(strings.Repeat("(?,?,?),", len(fields)), ",")))
+    createSchemaFieldsStmt, err := tx.Prepare(fmt.Sprintf(`INSERT INTO feature_set_schema_fields (feature_set_schema_uid, name, value_type, nullable) VALUES %s`, strings.TrimSuffix(strings.Repeat("(?,?,?,?),", len(fields)), ",")))
     if err != nil {
         return nil, err
     }
@@ -204,10 +205,10 @@ func (r *FeaturesRepository) CreateSchema(setUid string, fields map[string]strin
     return r.FindSchema(uid)
 }
 
-func (r *FeaturesRepository) schemaFieldsValues(schemaUid string, fields map[string]string) []interface{} {
+func (r *FeaturesRepository) schemaFieldsValues(schemaUid string, fields []*FeatureSetSchemaField) []interface{} {
     values := make([]interface{}, 0, len(fields)*3)
-    for fieldName, fieldValueType := range fields {
-        values = append(values, schemaUid, fieldName, fieldValueType)
+    for _, field := range fields {
+        values = append(values, schemaUid, field.Name, field.ValueType, field.Nullable)
     }
     return values
 }
@@ -221,7 +222,7 @@ func (r *FeaturesRepository) DeleteSchema(uid string) error {
 }
 
 func (r *FeaturesRepository) schemaFields(schemaUid string) ([]*FeatureSetSchemaField, error) {
-    rows, err := r.db.Query(`SELECT name, value_type FROM feature_set_schema_fields WHERE feature_set_schema_uid = ?`, schemaUid)
+    rows, err := r.db.Query(`SELECT name, value_type, nullable FROM feature_set_schema_fields WHERE feature_set_schema_uid = ?`, schemaUid)
     if err != nil {
         return nil, err
     }
@@ -230,7 +231,7 @@ func (r *FeaturesRepository) schemaFields(schemaUid string) ([]*FeatureSetSchema
     fields := make([]*FeatureSetSchemaField, 0)
     for rows.Next() {
         field := &FeatureSetSchemaField{}
-        if err := rows.Scan(&field.Name, &field.ValueType); err != nil {
+        if err := rows.Scan(&field.Name, &field.ValueType, &field.Nullable); err != nil {
             return nil, err
         }
         fields = append(fields, field)

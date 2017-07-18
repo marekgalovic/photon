@@ -31,8 +31,9 @@ message FeatureSetSchema {
 }
 
 message FeatureSetSchemaField {
-    string name = 1;
-    string value_type = 2;
+    string name         = 1;
+    string value_type   = 2;
+    bool nullable       = 3;
 }
 
 message ListFeatureSetsRequest {}
@@ -60,7 +61,7 @@ message FindFeatureSetSchemaRequest {
 
 message CreateFeatureSetSchemaRequest {
     string feature_set_uid      = 1;
-    map<string,string> schema   = 2;
+    repeated FeatureSetSchemaField fields = 2;
 }
 
 message DeleteFeatureSetSchemaRequest {

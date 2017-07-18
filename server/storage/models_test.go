@@ -24,6 +24,10 @@ func (test *ModelsRepositoryTest) SetupTest() {
     test.seedDatabase()
 }
 
+func (test *ModelsRepositoryTest) TearDownTest() {
+    test.db.Close()
+}
+
 func (test *ModelsRepositoryTest) seedDatabase() {
     _, err := test.db.Exec(
         `INSERT INTO models (uid, name, owner) VALUES (?,?,?),(?,?,?)`,
@@ -55,10 +59,6 @@ func (test *ModelsRepositoryTest) seedDatabase() {
         "test-version-uid", "test-feature-set-uid", "x4", false,
     )
     test.Require().Nil(err)
-}
-
-func (test *ModelsRepositoryTest) TearDownTest() {
-    test.db.Close()
 }
 
 func (test *ModelsRepositoryTest) TestList() {

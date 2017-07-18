@@ -94,7 +94,7 @@ func (service *FeaturesService) FindSchema(ctx context.Context, req *pb.FindFeat
 }
 
 func (service *FeaturesService) CreateSchema(ctx context.Context, req *pb.CreateFeatureSetSchemaRequest) (*pb.FeatureSetSchema, error) {
-    schema, err := service.featuresRepository.CreateSchema(req.FeatureSetUid, req.Schema)
+    schema, err := service.featuresRepository.CreateSchema(req.FeatureSetUid, service.schemaFieldsProtoToSchemaFields(req.Fields))
     if err != nil {
         return nil, err
     }
@@ -116,4 +116,12 @@ func (service *FeaturesService) schemaToSchemaProto(schema *storage.FeatureSetSc
         Uid: schema.Uid,
         CreatedAt: int32(schema.CreatedAt.Unix()),
     }
+}
+
+func (service *FeaturesService) schemaFieldsProtoToSchemaFields(protos []*pb.FeatureSetSchemaField) []*storage.FeatureSetSchemaField {
+    fields := make([]*storage.FeatureSetSchemaField, 0, len(protos))
+    for i, proto := range protos {
+        fields[i] = &storage.FeatureSetSchemaField{Name: proto.Name, ValueType: proto.ValueType, Nullable: proto.Nullable}
+    }
+    return fields
 }
