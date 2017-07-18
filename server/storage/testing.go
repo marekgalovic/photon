@@ -1,9 +1,6 @@
 package storage
 
 import (
-    // "fmt";
-    // "testing";
-
     log "github.com/Sirupsen/logrus"
 )
 

@@ -6,6 +6,8 @@ import (
     "time";
     "path/filepath";
 
+    "github.com/marekgalovic/serving/server";
+
     "github.com/mattes/migrate";
     _ "github.com/mattes/migrate/database/mysql"
     _ "github.com/mattes/migrate/source/file"
@@ -13,7 +15,7 @@ import (
 )
 
 const (
-    migrationsPath = "./storage/migrations"
+    migrationsPath = "/storage/migrations"
 )
 
 func main() {
@@ -21,7 +23,9 @@ func main() {
         log.Fatal("No command provided.")
     }
 
-    migrator, err := migrate.New(fmt.Sprintf("file://%s", migrationsPath), "mysql://root:@tcp(127.0.0.1:3306)/serving_test")
+    config := server.NewConfig()
+
+    migrator, err := migrate.New(fmt.Sprintf("file://%s", filepath.Join(config.Root, migrationsPath)), config.Mysql.ConnectionUrl())
     if err != nil {
         log.Fatal(err)
     }

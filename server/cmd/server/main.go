@@ -13,12 +13,14 @@ import (
 )
 
 func main() {
-    listener, err := net.Listen("tcp", ":5005")
+    config := server.NewConfig()
+
+    listener, err := net.Listen("tcp", config.BindAddress())
     if err != nil {
         log.Fatal(err)
     }
 
-    mysql, err := storage.NewMysql("root:@tcp(127.0.0.1:3306)/serving_test?parseTime=True")
+    mysql, err := storage.NewMysql(config.Mysql.ConnectionUrl())
     if err != nil {
         log.Fatal(err)
     }
