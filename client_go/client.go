@@ -4,7 +4,7 @@ import (
     "golang.org/x/net/context";
     "google.golang.org/grpc";
 
-    pb "github.com/marekgalovic/serving/client_go/protos"
+    pb "github.com/marekgalovic/photon/client_go/protos"
 )
 
 type Client struct {

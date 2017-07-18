@@ -5,7 +5,7 @@ import (
     "time";
     "strings";
 
-    "github.com/marekgalovic/serving/server/metrics";
+    "github.com/marekgalovic/photon/server/metrics";
 
     "github.com/satori/go.uuid";
 )

@@ -3,10 +3,10 @@ package main
 import (
     "net";
 
-    "github.com/marekgalovic/serving/server";
-    "github.com/marekgalovic/serving/server/storage";
-    "github.com/marekgalovic/serving/server/services";
-    pb "github.com/marekgalovic/serving/server/protos";
+    "github.com/marekgalovic/photon/server";
+    "github.com/marekgalovic/photon/server/storage";
+    "github.com/marekgalovic/photon/server/services";
+    pb "github.com/marekgalovic/photon/server/protos";
 
     "google.golang.org/grpc";
     log "github.com/Sirupsen/logrus"

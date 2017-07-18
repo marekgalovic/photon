@@ -4,7 +4,7 @@ import (
     "fmt";
     "reflect";
 
-    pb "github.com/marekgalovic/serving/client_go/protos"
+    pb "github.com/marekgalovic/photon/client_go/protos"
 )
 
 func interfaceMapToValueInterfacePb(features map[string]interface{}) (map[string]*pb.ValueInterface, error) {

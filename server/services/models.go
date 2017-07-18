@@ -3,8 +3,8 @@ package services
 import (
     "golang.org/x/net/context";
     
-    "github.com/marekgalovic/serving/server/storage";
-    pb "github.com/marekgalovic/serving/server/protos"
+    "github.com/marekgalovic/photon/server/storage";
+    pb "github.com/marekgalovic/photon/server/protos"
 )
 
 type ModelsService struct {

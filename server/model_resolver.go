@@ -5,8 +5,8 @@ import (
     "time";
     // "math/rand";
 
-    "github.com/marekgalovic/serving/server/metrics";
-    "github.com/marekgalovic/serving/server/storage";
+    "github.com/marekgalovic/photon/server/metrics";
+    "github.com/marekgalovic/photon/server/storage";
 )
 
 type ModelResolver struct {

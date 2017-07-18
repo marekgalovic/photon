@@ -3,8 +3,8 @@ package server
 import (
     "fmt";
 
-    "github.com/marekgalovic/serving/server/storage";
-    "github.com/marekgalovic/serving/server/metrics";
+    "github.com/marekgalovic/photon/server/storage";
+    "github.com/marekgalovic/photon/server/metrics";
 
     log "github.com/Sirupsen/logrus"
 )

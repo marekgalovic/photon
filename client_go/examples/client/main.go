@@ -1,7 +1,7 @@
 package main
 
 import (
-    "github.com/marekgalovic/serving/client_go";
+    "github.com/marekgalovic/photon/client_go";
 
     log "github.com/Sirupsen/logrus"
 )

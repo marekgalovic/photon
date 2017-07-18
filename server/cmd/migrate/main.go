@@ -6,7 +6,7 @@ import (
     "time";
     "path/filepath";
 
-    "github.com/marekgalovic/serving/server";
+    "github.com/marekgalovic/photon/server";
 
     "github.com/mattes/migrate";
     _ "github.com/mattes/migrate/database/mysql"
