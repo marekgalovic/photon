@@ -9,6 +9,7 @@ import (
     "github.com/marekgalovic/photon/server";
 
     "github.com/mattes/migrate";
+    _ "github.com/go-sql-driver/mysql"
     _ "github.com/mattes/migrate/database/mysql"
     _ "github.com/mattes/migrate/source/file"
     log "github.com/Sirupsen/logrus"
@@ -25,7 +26,7 @@ func main() {
 
     config := server.NewConfig()
 
-    migrator, err := migrate.New(fmt.Sprintf("file://%s", filepath.Join(config.Root, migrationsPath)), config.Mysql.ConnectionUrl())
+    migrator, err := migrate.New(fmt.Sprintf("file://%s", filepath.Join(config.Root, migrationsPath)), fmt.Sprintf("mysql://%s", config.Mysql.ConnectionUrl()))
     if err != nil {
         log.Fatal(err)
     }

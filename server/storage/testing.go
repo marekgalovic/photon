@@ -5,7 +5,10 @@ import (
 )
 
 func NewTestMysql() *Mysql {
-    mysql, _ := NewMysql("root:@tcp(127.0.0.1:3306)/serving_test?parseTime=True")
+    mysql, err := NewMysql("root:@tcp(127.0.0.1:3306)/serving_test?parseTime=True")
+    if err != nil {
+        log.Fatal(err)
+    }
     return mysql
 }
 
@@ -15,7 +18,10 @@ func CleanupMysql(db *Mysql) {
 }
 
 func AssertCountChanged(db *Mysql, tableName string, diff int, callable func()) {
-    expected, _ := db.Count(tableName)
+    expected, err := db.Count(tableName)
+    if err != nil {
+        log.Fatal(err)
+    }
     expected += diff
 
     callable()
