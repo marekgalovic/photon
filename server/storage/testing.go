@@ -5,7 +5,7 @@ import (
 )
 
 func NewTestMysql() *Mysql {
-    mysql, err := NewMysql("root:@tcp(127.0.0.1:3306)/serving_test?parseTime=True")
+    mysql, err := NewMysql(MysqlConfig{Host: "127.0.0.1", Port: 3306, User: "root", Database: "serving_test"})
     if err != nil {
         log.Fatal(err)
     }

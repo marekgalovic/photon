@@ -7,3 +7,18 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     ports:
       - 3306:3306
+  cassandra:
+    image: 'bitnami/cassandra:latest'
+    labels:
+      kompose.service.type: nodeport
+    ports:
+      - '7000:7000'
+      - '7001:7001'
+      - '9042:9042'
+      - '9160:9160'
+    volumes:
+      - 'cassandra_data:/bitnami'
+
+volumes:
+  cassandra_data:
+    driver: local

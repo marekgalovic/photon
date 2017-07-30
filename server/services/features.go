@@ -3,15 +3,15 @@ package services
 import (
     "golang.org/x/net/context";
     
-    "github.com/marekgalovic/photon/server/storage";
+    "github.com/marekgalovic/photon/server/storage/repositories";
     pb "github.com/marekgalovic/photon/server/protos"
 )
 
 type FeaturesService struct {
-    featuresRepository *storage.FeaturesRepository
+    featuresRepository *repositories.FeaturesRepository
 }
 
-func NewFeaturesService(featuresRepository *storage.FeaturesRepository) *FeaturesService {
+func NewFeaturesService(featuresRepository *repositories.FeaturesRepository) *FeaturesService {
     return &FeaturesService{
         featuresRepository: featuresRepository,
     }
@@ -59,7 +59,7 @@ func (service *FeaturesService) Delete(ctx context.Context, req *pb.DeleteFeatur
     return &pb.EmptyResponse{}, nil
 }
 
-func (service *FeaturesService) featureSetToFeatureSetProto(featureSet *storage.FeatureSet) *pb.FeatureSet {
+func (service *FeaturesService) featureSetToFeatureSetProto(featureSet *repositories.FeatureSet) *pb.FeatureSet {
     return &pb.FeatureSet {
         Uid: featureSet.Uid,
         Name: featureSet.Name,
@@ -111,17 +111,17 @@ func (service *FeaturesService) DeleteSchema(ctx context.Context, req *pb.Delete
     return &pb.EmptyResponse{}, nil
 }
 
-func (service *FeaturesService) schemaToSchemaProto(schema *storage.FeatureSetSchema) *pb.FeatureSetSchema {
+func (service *FeaturesService) schemaToSchemaProto(schema *repositories.FeatureSetSchema) *pb.FeatureSetSchema {
     return &pb.FeatureSetSchema {
         Uid: schema.Uid,
         CreatedAt: int32(schema.CreatedAt.Unix()),
     }
 }
 
-func (service *FeaturesService) schemaFieldsProtoToSchemaFields(protos []*pb.FeatureSetSchemaField) []*storage.FeatureSetSchemaField {
-    fields := make([]*storage.FeatureSetSchemaField, 0, len(protos))
+func (service *FeaturesService) schemaFieldsProtoToSchemaFields(protos []*pb.FeatureSetSchemaField) []*repositories.FeatureSetSchemaField {
+    fields := make([]*repositories.FeatureSetSchemaField, 0, len(protos))
     for i, proto := range protos {
-        fields[i] = &storage.FeatureSetSchemaField{Name: proto.Name, ValueType: proto.ValueType, Nullable: proto.Nullable}
+        fields[i] = &repositories.FeatureSetSchemaField{Name: proto.Name, ValueType: proto.ValueType, Nullable: proto.Nullable}
     }
     return fields
 }

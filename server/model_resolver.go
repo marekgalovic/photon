@@ -6,22 +6,22 @@ import (
     // "math/rand";
 
     "github.com/marekgalovic/photon/server/metrics";
-    "github.com/marekgalovic/photon/server/storage";
+    "github.com/marekgalovic/photon/server/storage/repositories";
 )
 
 type ModelResolver struct {
-    modelsRepository *storage.ModelsRepository
+    modelsRepository *repositories.ModelsRepository
     modelsCache map[string]*modelsCacheEntry
     modelsCacheTimeout time.Duration
 }
 
 type modelsCacheEntry struct {
     cachedAt time.Time
-    model *storage.Model
-    version *storage.ModelVersion
+    model *repositories.Model
+    version *repositories.ModelVersion
 }   
 
-func NewModelResolver(modelsRepository *storage.ModelsRepository) *ModelResolver {
+func NewModelResolver(modelsRepository *repositories.ModelsRepository) *ModelResolver {
     return &ModelResolver{
         modelsRepository: modelsRepository,
         modelsCache: make(map[string]*modelsCacheEntry, 0),
@@ -29,7 +29,7 @@ func NewModelResolver(modelsRepository *storage.ModelsRepository) *ModelResolver
     }
 }
 
-func (m *ModelResolver) GetModel(uid string) (*storage.Model, *storage.ModelVersion, error) {
+func (m *ModelResolver) GetModel(uid string) (*repositories.Model, *repositories.ModelVersion, error) {
     defer metrics.Runtime("model_resolver.get_model.runtime", []string{fmt.Sprintf("model_uid:%s", uid)})
 
     if cached, exists := m.modelsCache[uid]; exists && time.Since(cached.cachedAt) < m.modelsCacheTimeout {
@@ -50,6 +50,6 @@ func (m *ModelResolver) GetModel(uid string) (*storage.Model, *storage.ModelVers
     return model, version, nil
 }
 
-func (m *ModelResolver) GetShadowModels(uid string) ([]*storage.Model, error) {
+func (m *ModelResolver) GetShadowModels(uid string) ([]*repositories.ModelVersion, error) {
     return nil, nil
 }

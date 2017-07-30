@@ -7,6 +7,18 @@ import (
     _ "github.com/go-sql-driver/mysql"
 )
 
+type MysqlConfig struct {
+    User string
+    Password string
+    Host string
+    Port int
+    Database string
+}
+
+func (c *MysqlConfig) ConnectionUrl() string {
+    return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True", c.User, c.Password, c.Host, c.Port, c.Database)
+}
+
 type Mysql struct {
     *sql.DB
 }
@@ -15,8 +27,8 @@ type Scannable interface {
     Scan(...interface{}) error
 }
 
-func NewMysql(connUrl string) (*Mysql, error) {
-    conn, err := sql.Open("mysql", connUrl)
+func NewMysql(config MysqlConfig) (*Mysql, error) {
+    conn, err := sql.Open("mysql", config.ConnectionUrl())
     if err != nil {
         return nil, err
     }

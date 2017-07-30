@@ -2,44 +2,64 @@ package server
 
 import (
     "fmt";
+    "time";
 
-    "github.com/marekgalovic/photon/server/storage";
+    "github.com/marekgalovic/photon/server/storage/repositories";
+    "github.com/marekgalovic/photon/server/storage/features";
     "github.com/marekgalovic/photon/server/metrics";
 
     log "github.com/Sirupsen/logrus"
 )
 
 type FeaturesResolver struct {
-    featuresRepository *storage.FeaturesRepository
+    featuresRepository *repositories.FeaturesRepository
+    featuresStore *features.FeaturesStore
+    featureSetsCache map[string]*featureSetsCacheEntry
+    featureSetsCacheTimeout time.Duration
 }
 
-func NewFeaturesResolver(featuresRepository *storage.FeaturesRepository) *FeaturesResolver {
+type featureSetsCacheEntry struct {
+    cachedAt time.Time
+    featureSet *repositories.FeatureSet
+    schema *repositories.FeatureSetSchema
+}
+
+func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, featuresStore *features.FeaturesStore) *FeaturesResolver {
     return &FeaturesResolver{
         featuresRepository: featuresRepository,
+        featuresStore: featuresStore,
+        featureSetsCache: make(map[string]*featureSetsCacheEntry, 0),
+        featureSetsCacheTimeout: 10 * time.Second,
     }
 }
 
-func (r *FeaturesResolver) Resolve(version *storage.ModelVersion, requestParams map[string]interface{}) (map[string]interface{}, error) {
+func (r *FeaturesResolver) Resolve(version *repositories.ModelVersion, requestParams map[string]interface{}) (map[string]interface{}, error) {
     defer metrics.Runtime("features_resolver.resolve.runtime", []string{fmt.Sprintf("model_version_uid:%s", version.Uid)})()
 
-    var precomputedFeatures map[string]interface{}
-    var err error
     if len(version.PrecomputedFeatures) > 0 {
-        precomputedFeatures, err = r.queryPrecomputedFeatures(version, requestParams)
+        precomputedFeatures, err := r.queryPrecomputedFeatures(version, requestParams)
         if err != nil {
             return nil, err
         }
+        return r.merge(version, requestParams, precomputedFeatures)
     }
 
-    return r.merge(version, requestParams, precomputedFeatures)
+    return r.merge(version, requestParams, nil)
 }
 
-func (r *FeaturesResolver) queryPrecomputedFeatures(version *storage.ModelVersion, requestParams map[string]interface{}) (map[string]interface{}, error) {
+func (r *FeaturesResolver) queryPrecomputedFeatures(version *repositories.ModelVersion, requestParams map[string]interface{}) (map[string]interface{}, error) {
     log.Info(version)
+    for featureSetUid, _ := range version.PrecomputedFeatures {
+        featureSet, schema, err := r.getFeatureSet(featureSetUid)
+        if err != nil {
+            return nil, err
+        }
+        log.Info(featureSet.Uid, schema.Uid)
+    }
     return nil, nil
 }
 
-func (r *FeaturesResolver) merge(version *storage.ModelVersion, requestParams map[string]interface{}, precomputedFeatures map[string]interface{}) (map[string]interface{}, error) {
+func (r *FeaturesResolver) merge(version *repositories.ModelVersion, requestParams map[string]interface{}, precomputedFeatures map[string]interface{}) (map[string]interface{}, error) {
     features := make(map[string]interface{}, 0)
 
     for _, feature := range version.RequestFeatures {
@@ -62,4 +82,23 @@ func (r *FeaturesResolver) merge(version *storage.ModelVersion, requestParams ma
     }
 
     return features, nil
+}
+
+func (r *FeaturesResolver) getFeatureSet(uid string) (*repositories.FeatureSet, *repositories.FeatureSetSchema, error) {
+    if cached, exists := r.featureSetsCache[uid]; exists && time.Since(cached.cachedAt) < r.featureSetsCacheTimeout {
+        return cached.featureSet, cached.schema, nil
+    }
+
+    featureSet, err := r.featuresRepository.Find(uid)
+    if err != nil {
+        return nil, nil, err
+    }
+
+    featureSetSchema, err := r.featuresRepository.LatestSchema(uid)
+    if err != nil {
+        return nil, nil, err
+    }
+
+    r.featureSetsCache[uid] = &featureSetsCacheEntry{cachedAt: time.Now(), featureSet: featureSet, schema: featureSetSchema}
+    return featureSet, featureSetSchema, nil
 }
