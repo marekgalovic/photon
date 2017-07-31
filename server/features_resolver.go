@@ -13,7 +13,7 @@ import (
 
 type FeaturesResolver struct {
     featuresRepository *repositories.FeaturesRepository
-    featuresStore *features.FeaturesStore
+    featuresStore features.FeaturesStore
     featureSetsCache map[string]*featureSetsCacheEntry
     featureSetsCacheTimeout time.Duration
 }
@@ -24,7 +24,7 @@ type featureSetsCacheEntry struct {
     schema *repositories.FeatureSetSchema
 }
 
-func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, featuresStore *features.FeaturesStore) *FeaturesResolver {
+func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, featuresStore features.FeaturesStore) *FeaturesResolver {
     return &FeaturesResolver{
         featuresRepository: featuresRepository,
         featuresStore: featuresStore,

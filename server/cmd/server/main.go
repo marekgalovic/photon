@@ -15,12 +15,17 @@ import (
 )
 
 func main() {
-    config := server.NewConfig()
+    config, err := server.NewConfig()
+    if err != nil {
+        log.Fatalf("Failed to parse config: %v", err)
+    }
+    config.Print()
 
     listener, err := net.Listen("tcp", config.BindAddress())
     if err != nil {
         log.Fatal(err)
     }
+    defer listener.Close()
 
     mysql, err := storage.NewMysql(config.Mysql)
     if err != nil {
@@ -37,7 +42,7 @@ func main() {
     // Stores
     featuresRepository := repositories.NewFeaturesRepository(mysql)
     modelsRepository := repositories.NewModelsRepository(mysql)
-    featuresStore := features.NewFeaturesStore(cassandra)
+    featuresStore := features.NewCassandraFeaturesStore(cassandra)
 
     // Core
     featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)

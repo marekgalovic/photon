@@ -24,7 +24,10 @@ func main() {
         log.Fatal("No command provided.")
     }
 
-    config := server.NewConfig()
+    config, err := server.NewConfig()
+    if err != nil {
+        log.Fatalf("Failed to parse config: %v", err)
+    }
 
     migrator, err := migrate.New(fmt.Sprintf("file://%s", filepath.Join(config.Root, migrationsPath)), fmt.Sprintf("mysql://%s", config.Mysql.ConnectionUrl()))
     if err != nil {
