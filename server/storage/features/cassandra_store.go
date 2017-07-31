@@ -7,6 +7,7 @@ import (
 
     "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/storage/repositories";
+    "github.com/marekgalovic/photon/server/metrics";
 )
 
 type CassandraFeaturesStore struct {
@@ -20,6 +21,8 @@ func NewCassandraFeaturesStore(db *storage.Cassandra) *CassandraFeaturesStore {
 }
 
 func (s *CassandraFeaturesStore) Get(featureSet *repositories.FeatureSet, params map[string]interface{}) (map[string]interface{}, error) {
+    defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:get"})()
+
     sql := fmt.Sprintf(
         `SELECT data FROM %s WHERE %s LIMIT 1`,
         s.normalizeName(featureSet.Uid), strings.Join(s.selectConditions(featureSet.Keys, params), " AND "),
@@ -39,6 +42,8 @@ func (s *CassandraFeaturesStore) Get(featureSet *repositories.FeatureSet, params
 }
 
 func (s *CassandraFeaturesStore) Insert(featureSet *repositories.FeatureSet, schema *repositories.FeatureSetSchema, data map[string]interface{}) error {
+    defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:insert"})()
+
     sql := fmt.Sprintf(
         `INSERT INTO %s (schema_uid,%s,data) VALUES (%s)`,
         s.normalizeName(featureSet.Uid), strings.Join(featureSet.Keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(featureSet.Keys)+2), ","),
@@ -53,6 +58,8 @@ func (s *CassandraFeaturesStore) Insert(featureSet *repositories.FeatureSet, sch
 }
 
 func (s *CassandraFeaturesStore) CreateFeatureSet(uid string, keys []string) error {
+    defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:create_feature_set"})()
+
     sql := fmt.Sprintf(
         `CREATE TABLE %s (schema_uid UUID, %s, data TEXT, PRIMARY KEY (%s))`,
         s.normalizeName(uid), strings.Join(s.keysSchema(keys), ","), strings.Join(keys, ","),
@@ -62,6 +69,8 @@ func (s *CassandraFeaturesStore) CreateFeatureSet(uid string, keys []string) err
 }
 
 func (s *CassandraFeaturesStore) DeleteFeatureSet(uid string) error {
+    defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:delete_feature_set"})()
+
     sql := fmt.Sprintf("DROP TABLE %s", s.normalizeName(uid))
 
     return s.db.Query(sql).Exec()

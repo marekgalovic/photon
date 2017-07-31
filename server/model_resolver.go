@@ -29,7 +29,7 @@ func NewModelResolver(modelsRepository *repositories.ModelsRepository) *ModelRes
 }
 
 func (m *ModelResolver) GetModel(uid string) (*repositories.Model, *repositories.ModelVersion, error) {
-    defer metrics.Runtime("model_resolver.get_model.runtime", []string{fmt.Sprintf("model_uid:%s", uid)})
+    defer metrics.Runtime("model_resolver.runtime", []string{fmt.Sprintf("model_uid:%s", uid), "method:get_model"})
 
     if cached, exists := m.modelsCache.Get(uid); exists {
         entry := cached.(*modelsCacheEntry)
