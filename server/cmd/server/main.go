@@ -49,14 +49,12 @@ func main() {
     modelResolver := server.NewModelResolver(modelsRepository)
     evaluator := server.NewEvaluator(modelResolver, featuresResolver)
 
-    log.Info(evaluator.Evaluate("f3dbe4f8-68a3-11e7-ab75-0242ac120002", map[string]interface{}{"x1": 1, "x2": 2.83, "x3": "N"}))
-
     // Services
     grpcServer := grpc.NewServer()
     pb.RegisterEvaluatorServiceServer(grpcServer, services.NewEvaluatorService(evaluator))
     pb.RegisterModelsServiceServer(grpcServer, services.NewModelsService(modelsRepository))
     pb.RegisterFeaturesServiceServer(grpcServer, services.NewFeaturesService(featuresRepository))
 
-    log.Info("Listening ...")
+    log.Infof("Listening: %s", config.BindAddress())
     grpcServer.Serve(listener)
 }

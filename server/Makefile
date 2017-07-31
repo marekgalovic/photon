@@ -6,7 +6,7 @@ build:
 	go build -o ./bin/migrate ./cmd/migrate/main.go
 
 test:
-	ENV=test go test -ldflags -s ./...
+	PHOTON_ENV=test go test -ldflags -s ./...
 
 compile_protos:
 	rm -rf protos && protoc -I ../ --go_out=plugins=grpc:. ../protos/*.proto

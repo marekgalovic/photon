@@ -63,7 +63,7 @@ func (c *Config) parse() error {
 func (c *Config) parseFlags() {
     flag.StringVar(&c.Env, "env", c.Env, "Server environment.")
     flag.StringVar(&c.Root, "root", c.Root, "Server root path.")
-    flag.StringVar(&c.ConfigPath, "conf", c.ConfigPath, "Server config.")
+    flag.StringVar(&c.ConfigPath, "conf", c.ConfigPath, "Server config file.")
     flag.StringVar(&c.Address, "address", "0.0.0.0", "Server host.")
     flag.IntVar(&c.Port, "port", 5021, "Server port.")
     flag.StringVar(&c.Mysql.User, "mysql-user", "root", "Mysql username.")
