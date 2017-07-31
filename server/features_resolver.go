@@ -8,18 +8,17 @@ import (
     "github.com/marekgalovic/photon/server/storage/features";
     "github.com/marekgalovic/photon/server/metrics";
 
+    "github.com/patrickmn/go-cache";
     log "github.com/Sirupsen/logrus"
 )
 
 type FeaturesResolver struct {
     featuresRepository *repositories.FeaturesRepository
     featuresStore features.FeaturesStore
-    featureSetsCache map[string]*featureSetsCacheEntry
-    featureSetsCacheTimeout time.Duration
+    featureSetsCache *cache.Cache
 }
 
 type featureSetsCacheEntry struct {
-    cachedAt time.Time
     featureSet *repositories.FeatureSet
     schema *repositories.FeatureSetSchema
 }
@@ -28,8 +27,7 @@ func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, fe
     return &FeaturesResolver{
         featuresRepository: featuresRepository,
         featuresStore: featuresStore,
-        featureSetsCache: make(map[string]*featureSetsCacheEntry, 0),
-        featureSetsCacheTimeout: 10 * time.Second,
+        featureSetsCache: cache.New(30 * time.Second, 1 * time.Minute),
     }
 }
 
@@ -85,8 +83,9 @@ func (r *FeaturesResolver) merge(version *repositories.ModelVersion, requestPara
 }
 
 func (r *FeaturesResolver) getFeatureSet(uid string) (*repositories.FeatureSet, *repositories.FeatureSetSchema, error) {
-    if cached, exists := r.featureSetsCache[uid]; exists && time.Since(cached.cachedAt) < r.featureSetsCacheTimeout {
-        return cached.featureSet, cached.schema, nil
+    if cached, exists := r.featureSetsCache.Get(uid); exists {
+        entry := cached.(*featureSetsCacheEntry)
+        return entry.featureSet, entry.schema, nil
     }
 
     featureSet, err := r.featuresRepository.Find(uid)
@@ -99,6 +98,6 @@ func (r *FeaturesResolver) getFeatureSet(uid string) (*repositories.FeatureSet, 
         return nil, nil, err
     }
 
-    r.featureSetsCache[uid] = &featureSetsCacheEntry{cachedAt: time.Now(), featureSet: featureSet, schema: featureSetSchema}
+    r.featureSetsCache.Set(uid, &featureSetsCacheEntry{featureSet: featureSet, schema: featureSetSchema}, cache.DefaultExpiration)
     return featureSet, featureSetSchema, nil
 }

@@ -71,7 +71,7 @@ func (c *Config) parseFlags() {
     flag.StringVar(&c.Mysql.Host, "mysql-host", "127.0.0.1", "Mysql host.")
     flag.IntVar(&c.Mysql.Port, "mysql-port", 3306, "Mysql port.")
     flag.StringVar(&c.Mysql.Database, "mysql-database", "photon", "Mysql database.")
-    c.Cassandra.Nodes = strings.Split(*flag.String("cassandra-nodes", "127.0.0.1", "Cassandra nodes (comma separated)."), ",")
+    c.Cassandra.Nodes = strings.Split(*flag.String("cassandra-nodes", "127.0.0.1", "Cassandra nodes (comma delimited)."), ",")
     flag.StringVar(&c.Cassandra.Keyspace, "cassandra-keyspace", "photon", "Cassandra keyspace.")
     flag.StringVar(&c.Cassandra.Username, "cassandra-user", "cassandra", "Cassandra user.")
     flag.StringVar(&c.Cassandra.Password, "cassandra-password", "cassandra", "Cassandra password.")

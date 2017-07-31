@@ -6,6 +6,7 @@ import (
     "encoding/json";
 
     "github.com/marekgalovic/photon/server/storage";
+    "github.com/marekgalovic/photon/server/storage/repositories";
 )
 
 type CassandraFeaturesStore struct {
@@ -18,10 +19,10 @@ func NewCassandraFeaturesStore(db *storage.Cassandra) *CassandraFeaturesStore {
     }
 }
 
-func (s *CassandraFeaturesStore) Get(uid string, keys map[string]interface{}) (map[string]interface{}, error) {
+func (s *CassandraFeaturesStore) Get(featureSet *repositories.FeatureSet, params map[string]interface{}) (map[string]interface{}, error) {
     sql := fmt.Sprintf(
         `SELECT data FROM %s WHERE %s LIMIT 1`,
-        s.normalizeName(uid), strings.Join(s.selectConditions(keys), " AND "),
+        s.normalizeName(featureSet.Uid), strings.Join(s.selectConditions(featureSet.Keys, params), " AND "),
     )
 
     var marshaledData []byte
@@ -37,13 +38,13 @@ func (s *CassandraFeaturesStore) Get(uid string, keys map[string]interface{}) (m
     return data, nil
 }
 
-func (s *CassandraFeaturesStore) Insert(uid, schema_uid string, keys []string, data map[string]interface{}) error {
+func (s *CassandraFeaturesStore) Insert(featureSet *repositories.FeatureSet, schema *repositories.FeatureSetSchema, data map[string]interface{}) error {
     sql := fmt.Sprintf(
         `INSERT INTO %s (schema_uid,%s,data) VALUES (%s)`,
-        s.normalizeName(uid), strings.Join(keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(keys)+2), ","),
+        s.normalizeName(featureSet.Uid), strings.Join(featureSet.Keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(featureSet.Keys)+2), ","),
     )
 
-    values, err := s.insertValues(schema_uid, keys, data)
+    values, err := s.insertValues(schema.Uid, featureSet.Keys, data)
     if err != nil {
         return nil
     }
@@ -66,10 +67,10 @@ func (s *CassandraFeaturesStore) DeleteFeatureSet(uid string) error {
     return s.db.Query(sql).Exec()
 }
 
-func (s *CassandraFeaturesStore) selectConditions(keys map[string]interface{}) []string {
-    conditions := make([]string, 0)
-    for key, value := range keys {
-        conditions = append(conditions, fmt.Sprintf("%s = '%v'", key, value))
+func (s *CassandraFeaturesStore) selectConditions(keys []string, params map[string]interface{}) []string {
+    conditions := make([]string, len(keys))
+    for _, key := range keys {
+        conditions = append(conditions, fmt.Sprintf("%s = '%v'", key, params[key]))
     }
     return conditions
 }

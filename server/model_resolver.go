@@ -7,16 +7,16 @@ import (
 
     "github.com/marekgalovic/photon/server/metrics";
     "github.com/marekgalovic/photon/server/storage/repositories";
+
+    "github.com/patrickmn/go-cache";
 )
 
 type ModelResolver struct {
     modelsRepository *repositories.ModelsRepository
-    modelsCache map[string]*modelsCacheEntry
-    modelsCacheTimeout time.Duration
+    modelsCache *cache.Cache
 }
 
 type modelsCacheEntry struct {
-    cachedAt time.Time
     model *repositories.Model
     version *repositories.ModelVersion
 }   
@@ -24,16 +24,16 @@ type modelsCacheEntry struct {
 func NewModelResolver(modelsRepository *repositories.ModelsRepository) *ModelResolver {
     return &ModelResolver{
         modelsRepository: modelsRepository,
-        modelsCache: make(map[string]*modelsCacheEntry, 0),
-        modelsCacheTimeout: 10 * time.Second,
+        modelsCache: cache.New(30 * time.Second, 1 * time.Minute),
     }
 }
 
 func (m *ModelResolver) GetModel(uid string) (*repositories.Model, *repositories.ModelVersion, error) {
     defer metrics.Runtime("model_resolver.get_model.runtime", []string{fmt.Sprintf("model_uid:%s", uid)})
 
-    if cached, exists := m.modelsCache[uid]; exists && time.Since(cached.cachedAt) < m.modelsCacheTimeout {
-        return cached.model, cached.version, nil
+    if cached, exists := m.modelsCache.Get(uid); exists {
+        entry := cached.(*modelsCacheEntry)
+        return entry.model, entry.version, nil
     }
 
     model, err := m.modelsRepository.Find(uid)
@@ -46,7 +46,7 @@ func (m *ModelResolver) GetModel(uid string) (*repositories.Model, *repositories
         return nil, nil, err
     }
 
-    m.modelsCache[uid] = &modelsCacheEntry{cachedAt: time.Now(), model: model, version: version} 
+    m.modelsCache.Set(uid, &modelsCacheEntry{model: model, version: version}, cache.DefaultExpiration)
     return model, version, nil
 }
 
