@@ -4,8 +4,8 @@ import (
     "fmt";
     "time";
 
+    "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/storage/repositories";
-    "github.com/marekgalovic/photon/server/storage/features";
     "github.com/marekgalovic/photon/server/metrics";
 
     "github.com/patrickmn/go-cache";
@@ -13,7 +13,7 @@ import (
 
 type FeaturesResolver struct {
     featuresRepository *repositories.FeaturesRepository
-    featuresStore features.FeaturesStore
+    featuresStore storage.FeaturesStore
     featureSetsCache *cache.Cache
 }
 
@@ -22,7 +22,7 @@ type featureSetsCacheEntry struct {
     schema *repositories.FeatureSetSchema
 }
 
-func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, featuresStore features.FeaturesStore) *FeaturesResolver {
+func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, featuresStore storage.FeaturesStore) *FeaturesResolver {
     return &FeaturesResolver{
         featuresRepository: featuresRepository,
         featuresStore: featuresStore,
@@ -112,7 +112,7 @@ func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*rep
         return
     }
 
-    values, err := r.featuresStore.Get(featureSet, requestParams)
+    values, err := r.featuresStore.Get(featureSet.Uid, featureSet.Keys, requestParams)
     if err != nil {
         errNotifier <- err
         return

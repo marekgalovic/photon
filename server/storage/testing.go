@@ -50,6 +50,6 @@ func AssertCountChanged(db Countable, tableName string, diff int, callable func(
     actual, _ := db.Count(tableName)
 
     if expected != actual {
-        log.Fatalf("Expected count %d != %d", expected, actual)
+        log.Fatalf("Expected count %d != %d. Table: %s", expected, actual, tableName)
     }
 }

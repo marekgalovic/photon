@@ -23,14 +23,6 @@ type Mysql struct {
     *sql.DB
 }
 
-type Scannable interface {
-    Scan(...interface{}) error
-}
-
-type Countable interface {
-    Count(string) (int, error)
-}
-
 func NewMysql(config MysqlConfig) (*Mysql, error) {
     conn, err := sql.Open("mysql", config.ConnectionUrl())
     if err != nil {

@@ -4,9 +4,9 @@ import (
     "fmt";
     "strings";
     "encoding/json";
+    // "crypto/md5";
 
     "github.com/marekgalovic/photon/server/storage";
-    "github.com/marekgalovic/photon/server/storage/repositories";
     "github.com/marekgalovic/photon/server/metrics";
 )
 
@@ -20,12 +20,12 @@ func NewCassandraFeaturesStore(db *storage.Cassandra) *CassandraFeaturesStore {
     }
 }
 
-func (s *CassandraFeaturesStore) Get(featureSet *repositories.FeatureSet, params map[string]interface{}) (map[string]interface{}, error) {
+func (s *CassandraFeaturesStore) Get(uid string, keys []string, params map[string]interface{}) (map[string]interface{}, error) {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:get"})()
 
     sql := fmt.Sprintf(
         `SELECT data FROM %s WHERE %s LIMIT 1`,
-        s.normalizeName(featureSet.Uid), strings.Join(s.selectConditions(featureSet.Keys, params), " AND "),
+        s.TableName(uid), strings.Join(s.selectConditions(keys, params), " AND "),
     )
 
     var marshaledData []byte
@@ -41,15 +41,15 @@ func (s *CassandraFeaturesStore) Get(featureSet *repositories.FeatureSet, params
     return data, nil
 }
 
-func (s *CassandraFeaturesStore) Insert(featureSet *repositories.FeatureSet, schema *repositories.FeatureSetSchema, data map[string]interface{}) error {
+func (s *CassandraFeaturesStore) Insert(uid, schemaUid string, keys []string, data map[string]interface{}) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:insert"})()
 
     sql := fmt.Sprintf(
         `INSERT INTO %s (schema_uid,%s,data) VALUES (%s)`,
-        s.normalizeName(featureSet.Uid), strings.Join(featureSet.Keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(featureSet.Keys)+2), ","),
+        s.TableName(uid), strings.Join(keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(keys)+2), ","),
     )
 
-    values, err := s.insertValues(schema.Uid, featureSet.Keys, data)
+    values, err := s.insertValues(schemaUid, keys, data)
     if err != nil {
         return nil
     }
@@ -57,12 +57,12 @@ func (s *CassandraFeaturesStore) Insert(featureSet *repositories.FeatureSet, sch
     return s.db.Query(sql, values...).Exec()
 }
 
-func (s *CassandraFeaturesStore) CreateFeatureSet(featureSet *repositories.FeatureSet) error {
+func (s *CassandraFeaturesStore) CreateFeatureSet(uid string, keys []string) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:create_feature_set"})()
 
     sql := fmt.Sprintf(
         `CREATE TABLE %s (schema_uid UUID, %s, data TEXT, PRIMARY KEY (%s))`,
-        s.normalizeName(featureSet.Uid), strings.Join(s.keysSchema(featureSet.Keys), ","), strings.Join(featureSet.Keys, ","),
+        s.TableName(uid), strings.Join(s.keysSchema(keys), ","), strings.Join(keys, ","),
     )
 
     return s.db.Query(sql).Exec()
@@ -71,9 +71,13 @@ func (s *CassandraFeaturesStore) CreateFeatureSet(featureSet *repositories.Featu
 func (s *CassandraFeaturesStore) DeleteFeatureSet(uid string) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:delete_feature_set"})()
 
-    sql := fmt.Sprintf("DROP TABLE %s", s.normalizeName(uid))
+    sql := fmt.Sprintf("DROP TABLE %s", s.TableName(uid))
 
     return s.db.Query(sql).Exec()
+}
+
+func (s *CassandraFeaturesStore) TableName(name string) string {
+    return fmt.Sprintf("set_%s", strings.Replace(name, "-", "_", -1))     
 }
 
 func (s *CassandraFeaturesStore) selectConditions(keys []string, params map[string]interface{}) []string {
@@ -111,8 +115,4 @@ func (s *CassandraFeaturesStore) keysSchema(keys []string) []string {
         schema = append(schema, fmt.Sprintf("%s VARCHAR", key))
     }
     return schema
-}
-
-func (s *CassandraFeaturesStore) normalizeName(name string) string {
-    return strings.Replace(name, "-", "_", -1) 
 }

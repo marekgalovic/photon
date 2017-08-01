@@ -4,7 +4,6 @@ import (
     "testing";
 
     "github.com/marekgalovic/photon/server/storage";
-    "github.com/marekgalovic/photon/server/storage/repositories";
 
     "github.com/stretchr/testify/suite";
 )
@@ -33,21 +32,21 @@ func (test *CassandraFeaturesStoreTest) SetupTest() {
 }
 
 func (test *CassandraFeaturesStoreTest) seedDatabase() {
-    err := test.db.Query(`DROP TABLE IF EXISTS test_features_uid`).Exec();
+    err := test.db.Query(`DROP TABLE IF EXISTS set_test_features_uid`).Exec();
     test.Require().Nil(err)
 
-    err = test.db.Query(`DROP TABLE IF EXISTS test_features_uid2`).Exec();
+    err = test.db.Query(`DROP TABLE IF EXISTS set_test_features_uid2`).Exec();
     test.Require().Nil(err)
 
-    err = test.db.Query(`CREATE TABLE test_features_uid (schema_uid VARCHAR, key_a VARCHAR, key_b VARCHAR, data TEXT, PRIMARY KEY (key_a, key_b))`).Exec()
+    err = test.db.Query(`CREATE TABLE set_test_features_uid (schema_uid VARCHAR, key_a VARCHAR, key_b VARCHAR, data TEXT, PRIMARY KEY (key_a, key_b))`).Exec()
     test.Require().Nil(err)
 
-    err = test.db.Query(`INSERT INTO test_features_uid (schema_uid, key_a, key_b, data) VALUES ('test-schema-uid', '1', 'foo@bar.com', '{"x1": "foo", "x2": 1, "x3": 2.5}')`).Exec()
+    err = test.db.Query(`INSERT INTO set_test_features_uid (schema_uid, key_a, key_b, data) VALUES ('test-schema-uid', '1', 'foo@bar.com', '{"x1": "foo", "x2": 1, "x3": 2.5}')`).Exec()
     test.Require().Nil(err)
 }
  
 func (test *CassandraFeaturesStoreTest) TestGet() {
-    features, err := test.store.Get(&repositories.FeatureSet{Uid: "test-features-uid", Keys: []string{"key_a", "key_b"}}, map[string]interface{}{"key_a": 1, "key_b": "foo@bar.com"})
+    features, err := test.store.Get("test-features-uid", []string{"key_a", "key_b"}, map[string]interface{}{"key_a": 1, "key_b": "foo@bar.com"})
     test.Require().Nil(err)
 
     test.Require().NotNil(features)
@@ -57,11 +56,9 @@ func (test *CassandraFeaturesStoreTest) TestGet() {
 }
 
 func (test *CassandraFeaturesStoreTest) TestInsert() {
-    schemaUid := "3e53a72b-70ba-4255-8d89-f96de7c1c6b9"
-    storage.AssertCountChanged(test.db, "test_features_uid", 1, func() {
+    storage.AssertCountChanged(test.db, "set_test_features_uid", 1, func() {
         err := test.store.Insert(
-            &repositories.FeatureSet{Uid: "test-features-uid", Keys: []string{"key_a", "key_b"}}, 
-            &repositories.FeatureSetSchema{Uid: schemaUid},
+            "test-features-uid", "3e53a72b-70ba-4255-8d89-f96de7c1c6b9", []string{"key_a", "key_b"},
             map[string]interface{}{"key_a": 2, "key_b": "foo@baz.com", "x1": "baz", "x2": 2, "x3": 2.6},
         )
         test.Nil(err)
@@ -69,7 +66,7 @@ func (test *CassandraFeaturesStoreTest) TestInsert() {
 }
 
 func (test *CassandraFeaturesStoreTest) TestCreateFeatureSet() {
-    err := test.store.CreateFeatureSet(&repositories.FeatureSet{Uid: "test-features-uid2", Keys: []string{"key_c"}})
+    err := test.store.CreateFeatureSet("test-features-uid2", []string{"key_c"})
 
     test.Nil(err)
 }
