@@ -1,6 +1,9 @@
 package storage
 
 import (
+    "fmt";
+    "time";
+    
     "github.com/gocql/gocql"
 )
 
@@ -17,6 +20,7 @@ type Cassandra struct {
 
 func NewCassandra(config CassandraConfig) (*Cassandra, error) {
     cluster := gocql.NewCluster(config.Nodes...)
+    cluster.Timeout = 5 * time.Second
     cluster.Keyspace = config.Keyspace
     cluster.Consistency = gocql.Quorum
     cluster.Authenticator = gocql.PasswordAuthenticator{Username: config.Username, Password: config.Password}
@@ -27,4 +31,12 @@ func NewCassandra(config CassandraConfig) (*Cassandra, error) {
     }
     
     return &Cassandra{session}, nil
+}
+
+func (cassandra *Cassandra) Count(tableName string) (int, error) {
+    var count int
+    if err := cassandra.Query(fmt.Sprintf(`SELECT count(1) FROM %s`, tableName)).Scan(&count); err != nil {
+        return 0, err
+    }
+    return count, nil
 }

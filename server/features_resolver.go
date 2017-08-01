@@ -9,7 +9,6 @@ import (
     "github.com/marekgalovic/photon/server/metrics";
 
     "github.com/patrickmn/go-cache";
-    log "github.com/Sirupsen/logrus"
 )
 
 type FeaturesResolver struct {
@@ -44,7 +43,14 @@ func (r *FeaturesResolver) Resolve(version *repositories.ModelVersion, requestPa
         return nil, err
     }
 
-    return r.merge(version, requestFeatures, precomputedFeatures)
+    features := make(map[string]interface{})
+    for key, value := range requestFeatures {
+        features[key] = value
+    }
+    for key, value := range precomputedFeatures {
+        features[key] = value
+    }
+    return features, nil
 }
 
 func (r *FeaturesResolver) resolveRequestFeatures(version *repositories.ModelVersion, requestParams map[string]interface{}) (map[string]interface{}, error) {
@@ -52,7 +58,7 @@ func (r *FeaturesResolver) resolveRequestFeatures(version *repositories.ModelVer
 
     for _, feature := range version.RequestFeatures {
         value, exists := requestParams[feature.Name]
-        if (feature.Required && !exists) || value == nil {
+        if (feature.Required && (!exists || value == nil)) {
             return nil, fmt.Errorf("Required request feature '%s' is missing or null.", feature.Name)
         }
         requestFeatures[feature.Name] = requestParams[feature.Name]
@@ -115,7 +121,7 @@ func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*rep
     resolvedFeatures := make(map[string]interface{})
     for _, feature := range features {
         value, exists := values[feature.Name]
-        if (feature.Required && !exists) || value == nil {
+        if (feature.Required && (!exists || value == nil)) {
             errNotifier <- fmt.Errorf("Required precomputed feature '%s' is missing or null.", feature.Name)
             return
         }
@@ -123,31 +129,6 @@ func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*rep
     }
 
     queue <- resolvedFeatures
-}
-
-func (r *FeaturesResolver) merge(version *repositories.ModelVersion, requestParams map[string]interface{}, precomputedFeatures map[string]interface{}) (map[string]interface{}, error) {
-    features := make(map[string]interface{}, 0)
-
-    for _, feature := range version.RequestFeatures {
-        value, exists := requestParams[feature.Name]
-        if !exists && feature.Required {
-            return nil, fmt.Errorf("Required feature '%s' not found in request parameters.", feature.Name)
-        }
-        features[feature.Name] = value
-    }
-
-    for _, features := range version.PrecomputedFeatures {
-        for _, feature := range features {
-            log.Info(feature)
-            // value, exists := precomputedFeatures[feature.Name]
-            // if !exists && feature.Required {
-            //     return nil, fmt.Errorf("Required feautre '%s' not found in precomputed features.", feature.Name)
-            // }
-            // features[feature.Name] = value
-        }
-    }
-
-    return features, nil
 }
 
 func (r *FeaturesResolver) getFeatureSet(uid string) (*repositories.FeatureSet, *repositories.FeatureSetSchema, error) {

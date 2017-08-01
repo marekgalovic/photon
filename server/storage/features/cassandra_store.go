@@ -57,12 +57,12 @@ func (s *CassandraFeaturesStore) Insert(featureSet *repositories.FeatureSet, sch
     return s.db.Query(sql, values...).Exec()
 }
 
-func (s *CassandraFeaturesStore) CreateFeatureSet(uid string, keys []string) error {
+func (s *CassandraFeaturesStore) CreateFeatureSet(featureSet *repositories.FeatureSet) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:create_feature_set"})()
 
     sql := fmt.Sprintf(
         `CREATE TABLE %s (schema_uid UUID, %s, data TEXT, PRIMARY KEY (%s))`,
-        s.normalizeName(uid), strings.Join(s.keysSchema(keys), ","), strings.Join(keys, ","),
+        s.normalizeName(featureSet.Uid), strings.Join(s.keysSchema(featureSet.Keys), ","), strings.Join(featureSet.Keys, ","),
     )
 
     return s.db.Query(sql).Exec()
@@ -78,8 +78,8 @@ func (s *CassandraFeaturesStore) DeleteFeatureSet(uid string) error {
 
 func (s *CassandraFeaturesStore) selectConditions(keys []string, params map[string]interface{}) []string {
     conditions := make([]string, len(keys))
-    for _, key := range keys {
-        conditions = append(conditions, fmt.Sprintf("%s = '%v'", key, params[key]))
+    for i, key := range keys {
+        conditions[i] = fmt.Sprintf("%s = '%v'", key, params[key])
     }
     return conditions
 }

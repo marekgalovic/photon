@@ -7,6 +7,6 @@ import (
 type FeaturesStore interface {
     Get(*repositories.FeatureSet, map[string]interface{}) (map[string]interface{}, error)
     Insert(*repositories.FeatureSet, *repositories.FeatureSetSchema, map[string]interface{}) error
-    CreateFeatureSet(string, []string) error
+    CreateFeatureSet(*repositories.FeatureSet) error
     DeleteFeatureSet(string) error
 }

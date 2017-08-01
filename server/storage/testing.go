@@ -1,6 +1,8 @@
 package storage
 
 import (
+    "fmt";
+
     log "github.com/Sirupsen/logrus"
 )
 
@@ -12,12 +14,31 @@ func NewTestMysql() *Mysql {
     return mysql
 }
 
-func CleanupMysql(db *Mysql) {
-    db.Exec(`DELETE FROM models`)
-    db.Exec(`DELETE FROM feature_sets`)
+func NewTestCassandra() *Cassandra {
+    cassandra, err := NewCassandra(CassandraConfig{Nodes: []string{"127.0.0.1"}, Keyspace: "photon_test", Username: "cassandra", Password: "cassandra"})
+    if err != nil {
+        log.Fatal(err)
+    }
+    return cassandra
 }
 
-func AssertCountChanged(db *Mysql, tableName string, diff int, callable func()) {
+func CleanupMysql(db *Mysql, tables ...string) {
+    for _, table := range tables {
+        if _, err := db.Exec(fmt.Sprintf("DELETE FROM %s", table)); err != nil {
+            log.Fatal(err)
+        }
+    }
+}
+
+func CleanupCassandra(db *Cassandra, tables ...string) {
+    for _, table := range tables {
+        if err := db.Query(fmt.Sprintf("DELETE FROM %s", table)).Exec(); err != nil {
+            log.Fatal(err)
+        }
+    }
+}
+
+func AssertCountChanged(db Countable, tableName string, diff int, callable func()) {
     expected, err := db.Count(tableName)
     if err != nil {
         log.Fatal(err)

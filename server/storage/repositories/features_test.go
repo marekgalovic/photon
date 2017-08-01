@@ -20,7 +20,7 @@ func TestFeaturesRepository(t *testing.T) {
 
 func (test *FeaturesRepositoryTest) SetupTest() {
     test.db = storage.NewTestMysql()
-    storage.CleanupMysql(test.db)
+    storage.CleanupMysql(test.db, "models", "feature_sets")
 
     test.repository = NewFeaturesRepository(test.db)
     test.seedDatabase()
