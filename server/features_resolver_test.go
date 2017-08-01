@@ -139,6 +139,13 @@ func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeatures() {
     test.Equal(map[string]interface{}{"x1": 1, "x2": 2.5, "x3": 2.3, "x4": 5.0, "x5": 7.2}, features)
 }
 
+func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeaturesValidatesKeysPresence() {
+    features, err := test.resolver.Resolve(test.modelVersionWithPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "key_a": 1, "key_b": "foo"})
+
+    test.NotNil(err)
+    test.Nil(features)
+}
+
 func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeaturesAndMissingRequiredPrecomputedFeature() {
     features, err := test.resolver.Resolve(test.modelVersionWithPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "key_a": 2, "key_b": "foo", "key_c": "bar"})
 

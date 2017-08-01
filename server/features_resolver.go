@@ -3,6 +3,8 @@ package server
 import (
     "fmt";
     "time";
+    "strings";
+    "crypto/sha1";
 
     "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/storage/repositories";
@@ -16,6 +18,7 @@ type FeaturesResolver struct {
     featuresRepository *repositories.FeaturesRepository
     featuresStore storage.FeaturesStore
     featureSetsCache *cache.Cache
+    featuresCache *cache.Cache
 }
 
 type featureSetsCacheEntry struct {
@@ -29,6 +32,7 @@ func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, fe
         featuresRepository: featuresRepository,
         featuresStore: featuresStore,
         featureSetsCache: cache.New(30 * time.Second, 1 * time.Minute),
+        featuresCache: cache.New(10 * time.Second, 30 * time.Second),
     }
 }
 
@@ -74,6 +78,17 @@ func (r *FeaturesResolver) resolvePrecomputedFeatures(version *repositories.Mode
         return nil, nil
     }
 
+    featureSetsKeys, err := r.featureSetsKeys(version, requestParams)
+    if err != nil {
+        return nil, err
+    }
+
+    cacheKey := r.featuresCacheKey(version, featureSetsKeys)
+
+    if cached, exists := r.featuresCache.Get(cacheKey); exists {
+        return cached.(map[string]interface{}), nil
+    }
+
     queue := make(chan map[string]interface{}, len(version.PrecomputedFeatures))
     defer close(queue)
     errNotifier := make(chan error, 1)
@@ -101,6 +116,7 @@ func (r *FeaturesResolver) resolvePrecomputedFeatures(version *repositories.Mode
                 precomputedFeatures[key] = value
             }
             if i == len(version.PrecomputedFeatures) {
+                r.featuresCache.Set(cacheKey, precomputedFeatures, cache.DefaultExpiration)
                 return precomputedFeatures, nil   
             }
         case err := <- errNotifier:
@@ -109,6 +125,32 @@ func (r *FeaturesResolver) resolvePrecomputedFeatures(version *repositories.Mode
             return nil, fmt.Errorf("Timeout while resolving precomputed features.")
         }
     }
+}
+
+func (r *FeaturesResolver) featureSetsKeys(version *repositories.ModelVersion, requestParams map[string]interface{}) (map[string]interface{}, error) {
+    keys := make(map[string]interface{})
+    for featureSetUid, _ := range version.PrecomputedFeatures {
+        featureSet, _, err := r.getFeatureSet(featureSetUid)
+        if err != nil {
+            return nil, err
+        }
+        for _, key := range featureSet.Keys {
+            value, exists := requestParams[key]; 
+            if !exists || value == nil {
+                return nil, fmt.Errorf("Request param '%s' is missing or null.", key)
+            }
+            keys[key] = value
+        } 
+    }
+    return keys, nil
+}
+
+func (r *FeaturesResolver) featuresCacheKey(version *repositories.ModelVersion, featureSetsKeys map[string]interface{}) string {
+    keys := []string{version.Uid}
+    for key, value := range featureSetsKeys {
+        keys = append(keys, fmt.Sprintf("%s=%v", key, value))
+    }
+    return fmt.Sprintf("%x", sha1.Sum([]byte(strings.Join(keys, ""))))
 }
 
 func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*repositories.ModelFeature, requestParams map[string]interface{}, queue chan map[string]interface{}, errNotifier chan error, finishedNotifier chan bool) {
