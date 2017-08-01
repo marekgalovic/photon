@@ -12,6 +12,7 @@ import (
 )
 
 type FeaturesResolver struct {
+    Timeout time.Duration
     featuresRepository *repositories.FeaturesRepository
     featuresStore storage.FeaturesStore
     featureSetsCache *cache.Cache
@@ -24,6 +25,7 @@ type featureSetsCacheEntry struct {
 
 func NewFeaturesResolver(featuresRepository *repositories.FeaturesRepository, featuresStore storage.FeaturesStore) *FeaturesResolver {
     return &FeaturesResolver{
+        Timeout: 100 * time.Millisecond,
         featuresRepository: featuresRepository,
         featuresStore: featuresStore,
         featureSetsCache: cache.New(30 * time.Second, 1 * time.Minute),
@@ -73,62 +75,86 @@ func (r *FeaturesResolver) resolvePrecomputedFeatures(version *repositories.Mode
     }
 
     queue := make(chan map[string]interface{}, len(version.PrecomputedFeatures))
-    finishedNotifier := make(chan bool, 1)
+    defer close(queue)
     errNotifier := make(chan error, 1)
-
-    for featureSetUid, features := range version.PrecomputedFeatures {
-        go r.queryFeatureSet(featureSetUid, features, requestParams, queue, errNotifier)
-    }
-
-    go func() {
-        for {
-            if len(queue) == cap(queue) {
-                finishedNotifier <- true
-                return
-            }
+    defer close(errNotifier)
+    finishedNotifiers := make([]chan bool, 0)
+    defer func() {
+        for _, notifier := range finishedNotifiers {
+            close(notifier)
         }
     }()
 
-    select {
-    case <- finishedNotifier:
-        precomputedFeatures := make(map[string]interface{})
-        for features := range queue {
+    for featureSetUid, features := range version.PrecomputedFeatures {
+        finishedNotifier := make(chan bool, 1)
+        finishedNotifiers = append(finishedNotifiers, finishedNotifier)
+        go r.queryFeatureSet(featureSetUid, features, requestParams, queue, errNotifier, finishedNotifier)
+    }
+
+    precomputedFeatures := make(map[string]interface{})
+    i := 0
+    for {
+        select {
+        case features := <- queue:
+            i += 1
             for key, value := range features {
                 precomputedFeatures[key] = value
             }
+            if i == len(version.PrecomputedFeatures) {
+                return precomputedFeatures, nil   
+            }
+        case err := <- errNotifier:
+            return nil, err
+        case <- time.After(r.Timeout):
+            return nil, fmt.Errorf("Timeout while resolving precomputed features.")
         }
-        return precomputedFeatures, nil
-    case err := <- errNotifier:
-        return nil, err
-    case <- time.After(1 * time.Second):
-        return nil, fmt.Errorf("Timeout while resolving precomputed features.")
     }
 }
 
-func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*repositories.ModelFeature, requestParams map[string]interface{}, queue chan map[string]interface{}, errNotifier chan error) {
+func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*repositories.ModelFeature, requestParams map[string]interface{}, queue chan map[string]interface{}, errNotifier chan error, finishedNotifier chan bool) {
     featureSet, _, err := r.getFeatureSet(featureSetUid)
     if err != nil {
-        errNotifier <- err
-        return
+        select {
+        case <- finishedNotifier:
+            return
+        default:
+            errNotifier <- err
+            return
+        }
     }
 
     values, err := r.featuresStore.Get(featureSet.Uid, featureSet.Keys, requestParams)
     if err != nil {
-        errNotifier <- err
-        return
+        select {
+        case <- finishedNotifier:
+            return
+        default:
+            errNotifier <- err
+            return
+        }
     }
 
     resolvedFeatures := make(map[string]interface{})
     for _, feature := range features {
         value, exists := values[feature.Name]
         if (feature.Required && (!exists || value == nil)) {
-            errNotifier <- fmt.Errorf("Required precomputed feature '%s' is missing or null.", feature.Name)
-            return
+            select {
+            case <- finishedNotifier:
+                return
+            default:
+                errNotifier <- fmt.Errorf("Required precomputed feature '%s' is missing or null.", feature.Name)
+                return
+            }
         }
         resolvedFeatures[feature.Name] = values[feature.Name]
     }
 
-    queue <- resolvedFeatures
+    select {
+    case <- finishedNotifier:
+        return
+    default:
+        queue <- resolvedFeatures    
+    }
 }
 
 func (r *FeaturesResolver) getFeatureSet(uid string) (*repositories.FeatureSet, *repositories.FeatureSetSchema, error) {

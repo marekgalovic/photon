@@ -4,7 +4,6 @@ import (
     "fmt";
     "strings";
     "encoding/json";
-    // "crypto/md5";
 
     "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/metrics";

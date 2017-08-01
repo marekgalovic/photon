@@ -1,6 +1,7 @@
 package server
 
 import (
+    "time";
     "testing";
 
     "github.com/marekgalovic/photon/server/storage";
@@ -32,7 +33,6 @@ func (test *FeaturesResolverTest) SetupSuite() {
     test.cassandra = storage.NewTestCassandra()
     test.featuresRepository = repositories.NewFeaturesRepository(test.mysql)
     test.featuresStore = features.NewCassandraFeaturesStore(test.cassandra)
-    test.resolver = NewFeaturesResolver(test.featuresRepository, test.featuresStore)
 
     test.seedDatabase()
 
@@ -59,6 +59,10 @@ func (test *FeaturesResolverTest) SetupSuite() {
     }
 }
 
+func (test *FeaturesResolverTest) SetupTest() {
+    test.resolver = NewFeaturesResolver(test.featuresRepository, test.featuresStore)
+}
+
 func (test *FeaturesResolverTest) TearDownSuite() {
     test.cleanupDatabase()
     test.mysql.Close()
@@ -71,7 +75,7 @@ func (test *FeaturesResolverTest) seedDatabase() {
     test.featureSetA, err = test.featuresRepository.Create("a", []string{"key_a", "key_b"})
     test.Require().Nil(err)
 
-    _, err = test.featuresRepository.CreateSchema(test.featureSetA.Uid, []*repositories.FeatureSetSchemaField{
+    schemaA, err := test.featuresRepository.CreateSchema(test.featureSetA.Uid, []*repositories.FeatureSetSchemaField{
         &repositories.FeatureSetSchemaField{Name: "x3", ValueType: "float", Nullable: false},
         &repositories.FeatureSetSchemaField{Name: "x4", ValueType: "float", Nullable: false},
     })
@@ -80,7 +84,7 @@ func (test *FeaturesResolverTest) seedDatabase() {
     test.featureSetB, err = test.featuresRepository.Create("b", []string{"key_c"})
     test.Require().Nil(err)
 
-    _, err = test.featuresRepository.CreateSchema(test.featureSetB.Uid, []*repositories.FeatureSetSchemaField{
+    schemaB, err := test.featuresRepository.CreateSchema(test.featureSetB.Uid, []*repositories.FeatureSetSchemaField{
         &repositories.FeatureSetSchemaField{Name: "x5", ValueType: "float", Nullable: true},
     })
     test.Require().Nil(err)
@@ -89,6 +93,15 @@ func (test *FeaturesResolverTest) seedDatabase() {
     test.Require().Nil(err)
 
     err = test.featuresStore.CreateFeatureSet(test.featureSetB.Uid, test.featureSetB.Keys)
+    test.Require().Nil(err)
+
+    err = test.featuresStore.Insert(test.featureSetA.Uid, schemaA.Uid, test.featureSetA.Keys, map[string]interface{}{"key_a": 1, "key_b": "foo", "x3": 2.3, "x4": 5.0})
+    test.Require().Nil(err)
+
+    err = test.featuresStore.Insert(test.featureSetA.Uid, schemaA.Uid, test.featureSetA.Keys, map[string]interface{}{"key_a": 2, "key_b": "foo", "x3": 2.3})
+    test.Require().Nil(err)
+
+    err = test.featuresStore.Insert(test.featureSetB.Uid, schemaB.Uid, test.featureSetB.Keys, map[string]interface{}{"key_c": "bar", "x5": 7.2})
     test.Require().Nil(err)
 }
 
@@ -101,7 +114,7 @@ func (test *FeaturesResolverTest) cleanupDatabase() {
 func (test *FeaturesResolverTest) TestResolveWithoutPrecomputedFeatures() {
     features, err := test.resolver.Resolve(test.modelVersionWithoutPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "foo": "bar"})
 
-    test.Require().Nil(err)
+    test.Nil(err)
     test.Equal(map[string]interface{}{"x1": 1, "x2": 2.5}, features)
 }
 
@@ -117,4 +130,26 @@ func (test *FeaturesResolverTest) TestResolveWithoutPrecomputedFeaturesAndMissin
 
     test.Nil(err)
     test.Equal(map[string]interface{}{"x1": 1, "x2": nil}, features)
+}
+
+func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeatures() {
+    features, err := test.resolver.Resolve(test.modelVersionWithPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "key_a": 1, "key_b": "foo", "key_c": "bar"})
+
+    test.Nil(err)
+    test.Equal(map[string]interface{}{"x1": 1, "x2": 2.5, "x3": 2.3, "x4": 5.0, "x5": 7.2}, features)
+}
+
+func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeaturesAndMissingRequiredPrecomputedFeature() {
+    features, err := test.resolver.Resolve(test.modelVersionWithPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "key_a": 2, "key_b": "foo", "key_c": "bar"})
+
+    test.NotNil(err)
+    test.Nil(features)
+}
+
+func (test *FeaturesResolverTest) TestResolverTimeout() {
+    test.resolver.Timeout = 1 * time.Millisecond
+    features, err := test.resolver.Resolve(test.modelVersionWithPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "key_a": 2, "key_b": "foo", "key_c": "bar"})
+
+    test.NotNil(err)
+    test.Nil(features)
 }
