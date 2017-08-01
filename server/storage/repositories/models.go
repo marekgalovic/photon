@@ -32,6 +32,7 @@ type ModelVersion struct {
 
 type ModelFeature struct {
     Name string
+    Alias string
     Required bool
 }
 
@@ -220,8 +221,8 @@ func (r *ModelsRepository) CreateVersion(modelUid, name string, isPrimary, isSha
 
 func (r *ModelsRepository) createVersionRequestFeatures(tx *sql.Tx, uid string, features []*ModelFeature) error {
     stmt, err := tx.Prepare(fmt.Sprintf(
-        `INSERT INTO model_version_request_features (model_version_uid, name, required) VALUES %s`,
-        strings.TrimSuffix(strings.Repeat("(?,?,?),", len(features)), ","),
+        `INSERT INTO model_version_request_features (model_version_uid, name, alias, required) VALUES %s`,
+        strings.TrimSuffix(strings.Repeat("(?,?,?,?),", len(features)), ","),
     ))
     if err != nil {
         return err
@@ -235,7 +236,10 @@ func (r *ModelsRepository) createVersionRequestFeatures(tx *sql.Tx, uid string, 
 func (r *ModelsRepository) versionRequestFeaturesValues(uid string, features []*ModelFeature) []interface{} {
     values := make([]interface{}, 0, len(features)*3)
     for _, feature := range features {
-        values = append(values, uid, feature.Name, feature.Required)
+        if feature.Alias == "" {
+            feature.Alias = feature.Name
+        }
+        values = append(values, uid, feature.Name, feature.Alias, feature.Required)
     }
     return values
 }
@@ -247,8 +251,8 @@ func (r *ModelsRepository) createVersionPrecomputedFeatures(tx *sql.Tx, uid stri
     }
 
     stmt, err := tx.Prepare(fmt.Sprintf(
-        `INSERT INTO model_version_precomputed_features (model_version_uid, feature_set_uid, name, required) VALUES %s`,
-        strings.TrimSuffix(strings.Repeat("(?,?,?,?),", precomputedFeaturesCount), ","),
+        `INSERT INTO model_version_precomputed_features (model_version_uid, feature_set_uid, name, alias, required) VALUES %s`,
+        strings.TrimSuffix(strings.Repeat("(?,?,?,?,?),", precomputedFeaturesCount), ","),
     ))
     if err != nil {
         return err
@@ -265,7 +269,10 @@ func (r *ModelsRepository) versionPrecomputedFeaturesValues(uid string, setFeatu
     for featureSetUid, features := range setFeatures {
         for _, feature := range features {
             n += 1
-            values = append(values, uid, featureSetUid, feature.Name, feature.Required)
+            if feature.Alias == "" {
+                feature.Alias = feature.Name
+            }
+            values = append(values, uid, featureSetUid, feature.Name, feature.Alias, feature.Required)
         }
     }
     return n, values
@@ -331,7 +338,7 @@ func (r *ModelsRepository) scanVersion(rows storage.Scannable) (*ModelVersion, e
 }
 
 func (r *ModelsRepository) versionRequestFeatures(versionUid string) ([]*ModelFeature, error) {
-    rows, err := r.db.Query(`SELECT name, required FROM model_version_request_features WHERE model_version_uid = ?`, versionUid)
+    rows, err := r.db.Query(`SELECT name, alias, required FROM model_version_request_features WHERE model_version_uid = ?`, versionUid)
     if err != nil {
         return nil, err
     }
@@ -340,9 +347,13 @@ func (r *ModelsRepository) versionRequestFeatures(versionUid string) ([]*ModelFe
     features := make([]*ModelFeature, 0)
     for rows.Next() {
         feature := &ModelFeature{}
-        if err = rows.Scan(&feature.Name, &feature.Required); err != nil {
+        var alias sql.NullString
+
+        if err = rows.Scan(&feature.Name, &alias, &feature.Required); err != nil {
             return nil, err
         }
+
+        feature.Alias = alias.String
         features = append(features, feature)
     }
 
@@ -351,7 +362,7 @@ func (r *ModelsRepository) versionRequestFeatures(versionUid string) ([]*ModelFe
 }
 
 func (r *ModelsRepository) versionPrecomputedFeatures(versionUid string) (map[string][]*ModelFeature, error) {
-    rows, err := r.db.Query(`SELECT name, required, feature_set_uid FROM model_version_precomputed_features WHERE model_version_uid = ?`, versionUid)
+    rows, err := r.db.Query(`SELECT name, alias, required, feature_set_uid FROM model_version_precomputed_features WHERE model_version_uid = ?`, versionUid)
     if err != nil {
         return nil, err
     }
@@ -360,10 +371,14 @@ func (r *ModelsRepository) versionPrecomputedFeatures(versionUid string) (map[st
     features := make(map[string][]*ModelFeature, 0)
     for rows.Next() {
         feature := &ModelFeature{}
+        var alias sql.NullString
         var featureSetUid string
-        if err = rows.Scan(&feature.Name, &feature.Required, &featureSetUid); err != nil {
+
+        if err = rows.Scan(&feature.Name, &alias, &feature.Required, &featureSetUid); err != nil {
             return nil, err
         }
+
+        feature.Alias = alias.String
 
         if _, exists := features[featureSetUid]; !exists {
             features[featureSetUid] = []*ModelFeature{feature}

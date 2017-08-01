@@ -46,9 +46,9 @@ func (test *ModelsRepositoryTest) seedDatabase() {
     test.Require().Nil(err)
 
     _, err = test.db.Exec(
-        `INSERT INTO model_version_request_features (model_version_uid, name, required) VALUES (?,?,?),(?,?,?)`,
-        "test-version-uid", "x1", true,
-        "test-version-uid", "x2", false,
+        `INSERT INTO model_version_request_features (model_version_uid, name, alias, required) VALUES (?,?,?,?),(?,?,?,?)`,
+        "test-version-uid", "x1", nil, true,
+        "test-version-uid", "x2", "x2_alias", false,
     )
     test.Require().Nil(err)
 
@@ -56,9 +56,9 @@ func (test *ModelsRepositoryTest) seedDatabase() {
     test.Require().Nil(err)
 
     _, err = test.db.Exec(
-        `INSERT INTO model_version_precomputed_features (model_version_uid, feature_set_uid, name, required) VALUES (?,?,?,?),(?,?,?,?)`,
-        "test-version-uid", "test-feature-set-uid", "x3", true,
-        "test-version-uid", "test-feature-set-uid", "x4", false,
+        `INSERT INTO model_version_precomputed_features (model_version_uid, feature_set_uid, name, alias, required) VALUES (?,?,?,?,?),(?,?,?,?,?)`,
+        "test-version-uid", "test-feature-set-uid", "x3", nil, true,
+        "test-version-uid", "test-feature-set-uid", "x4", "x4_alias", false,
     )
     test.Require().Nil(err)
 }
@@ -131,7 +131,7 @@ func (test *ModelsRepositoryTest) TestPrimaryVersionForModelWithNoVersions() {
 func (test *ModelsRepositoryTest) TestCreateVersion() {
     storage.AssertCountChanged(test.db, "model_versions", 1, func() {
         storage.AssertCountChanged(test.db, "model_version_request_features", 1, func() {
-            version, err := test.repository.CreateVersion("test-model-uid", "test_version_3", false, false, []*ModelFeature{&ModelFeature{"x1", true}}, map[string][]*ModelFeature{"test-feature-set-uid": []*ModelFeature{&ModelFeature{"x2", false}}})
+            version, err := test.repository.CreateVersion("test-model-uid", "test_version_3", false, false, []*ModelFeature{&ModelFeature{Name: "x1", Alias: "x1_alias", Required: true}}, map[string][]*ModelFeature{"test-feature-set-uid": []*ModelFeature{&ModelFeature{Name: "x2", Required: false}}})
             test.Require().Nil(err)
 
             test.NotNil("test_version_3", version.Name)
@@ -139,8 +139,8 @@ func (test *ModelsRepositoryTest) TestCreateVersion() {
             test.Equal(false, version.IsPrimary)
             test.Equal(1, len(version.RequestFeatures))
             test.Equal(1, len(version.PrecomputedFeatures))
-            test.Equal(&ModelFeature{"x1", true}, version.RequestFeatures[0])
-            test.Equal(&ModelFeature{"x2", false}, version.PrecomputedFeatures["test-feature-set-uid"][0])
+            test.Equal(&ModelFeature{Name: "x1", Alias: "x1_alias", Required: true}, version.RequestFeatures[0])
+            test.Equal(&ModelFeature{Name: "x2", Alias: "x2", Required: false}, version.PrecomputedFeatures["test-feature-set-uid"][0])
         })
     })
 }
@@ -149,7 +149,7 @@ func (test *ModelsRepositoryTest) TestCreatePrimaryVersion() {
     oldPrimaryVersion, err := test.repository.PrimaryVersion("test-model-uid")
     test.Require().Nil(err)
 
-    version, err := test.repository.CreateVersion("test-model-uid", "test_version_3", true, false, []*ModelFeature{&ModelFeature{"x1", false}}, map[string][]*ModelFeature{})
+    version, err := test.repository.CreateVersion("test-model-uid", "test_version_3", true, false, []*ModelFeature{&ModelFeature{Name: "x1", Required: false}}, map[string][]*ModelFeature{})
     test.Require().Nil(err)
 
     newPrimaryVersion, err := test.repository.PrimaryVersion("test-model-uid")

@@ -38,22 +38,22 @@ func (test *FeaturesResolverTest) SetupSuite() {
 
     test.modelVersionWithoutPrecomputedFeatures = &repositories.ModelVersion{
         RequestFeatures: []*repositories.ModelFeature{
-            &repositories.ModelFeature{Name: "x1", Required: true},
-            &repositories.ModelFeature{Name: "x2", Required: false},
+            &repositories.ModelFeature{Name: "x1", Alias: "x1", Required: true},
+            &repositories.ModelFeature{Name: "x2", Alias: "x2", Required: false},
         },
     }
     test.modelVersionWithPrecomputedFeatures = &repositories.ModelVersion{
         RequestFeatures: []*repositories.ModelFeature{
-            &repositories.ModelFeature{Name: "x1", Required: true},
-            &repositories.ModelFeature{Name: "x2", Required: false},
+            &repositories.ModelFeature{Name: "x1", Alias: "x1", Required: true},
+            &repositories.ModelFeature{Name: "x2", Alias: "x2", Required: false},
         },
         PrecomputedFeatures: map[string][]*repositories.ModelFeature{
             test.featureSetA.Uid: []*repositories.ModelFeature{
-                &repositories.ModelFeature{Name: "x3", Required: true},
-                &repositories.ModelFeature{Name: "x4", Required: true}, 
+                &repositories.ModelFeature{Name: "x1", Alias: "x1_precomputed", Required: true},
+                &repositories.ModelFeature{Name: "x2", Alias: "x2_precomputed", Required: true}, 
             },
             test.featureSetB.Uid: []*repositories.ModelFeature{
-                &repositories.ModelFeature{Name: "x5", Required: false},
+                &repositories.ModelFeature{Name: "x3", Alias: "x3", Required: false},
             },
         },
     }
@@ -76,8 +76,8 @@ func (test *FeaturesResolverTest) seedDatabase() {
     test.Require().Nil(err)
 
     schemaA, err := test.featuresRepository.CreateSchema(test.featureSetA.Uid, []*repositories.FeatureSetSchemaField{
-        &repositories.FeatureSetSchemaField{Name: "x3", ValueType: "float", Nullable: false},
-        &repositories.FeatureSetSchemaField{Name: "x4", ValueType: "float", Nullable: false},
+        &repositories.FeatureSetSchemaField{Name: "x1", ValueType: "float", Nullable: false},
+        &repositories.FeatureSetSchemaField{Name: "x2", ValueType: "float", Nullable: false},
     })
     test.Require().Nil(err)
 
@@ -85,7 +85,7 @@ func (test *FeaturesResolverTest) seedDatabase() {
     test.Require().Nil(err)
 
     schemaB, err := test.featuresRepository.CreateSchema(test.featureSetB.Uid, []*repositories.FeatureSetSchemaField{
-        &repositories.FeatureSetSchemaField{Name: "x5", ValueType: "float", Nullable: true},
+        &repositories.FeatureSetSchemaField{Name: "x3", ValueType: "float", Nullable: true},
     })
     test.Require().Nil(err)
 
@@ -95,13 +95,13 @@ func (test *FeaturesResolverTest) seedDatabase() {
     err = test.featuresStore.CreateFeatureSet(test.featureSetB.Uid, test.featureSetB.Keys)
     test.Require().Nil(err)
 
-    err = test.featuresStore.Insert(test.featureSetA.Uid, schemaA.Uid, test.featureSetA.Keys, map[string]interface{}{"key_a": 1, "key_b": "foo", "x3": 2.3, "x4": 5.0})
+    err = test.featuresStore.Insert(test.featureSetA.Uid, schemaA.Uid, test.featureSetA.Keys, map[string]interface{}{"key_a": 1, "key_b": "foo", "x1": 2.3, "x2": 5.0})
     test.Require().Nil(err)
 
-    err = test.featuresStore.Insert(test.featureSetA.Uid, schemaA.Uid, test.featureSetA.Keys, map[string]interface{}{"key_a": 2, "key_b": "foo", "x3": 2.3})
+    err = test.featuresStore.Insert(test.featureSetA.Uid, schemaA.Uid, test.featureSetA.Keys, map[string]interface{}{"key_a": 2, "key_b": "foo", "x1": 2.3})
     test.Require().Nil(err)
 
-    err = test.featuresStore.Insert(test.featureSetB.Uid, schemaB.Uid, test.featureSetB.Keys, map[string]interface{}{"key_c": "bar", "x5": 7.2})
+    err = test.featuresStore.Insert(test.featureSetB.Uid, schemaB.Uid, test.featureSetB.Keys, map[string]interface{}{"key_c": "bar", "x3": 7.2})
     test.Require().Nil(err)
 }
 
@@ -136,7 +136,7 @@ func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeatures() {
     features, err := test.resolver.Resolve(test.modelVersionWithPrecomputedFeatures, map[string]interface{}{"x1": 1, "x2": 2.5, "key_a": 1, "key_b": "foo", "key_c": "bar"})
 
     test.Nil(err)
-    test.Equal(map[string]interface{}{"x1": 1, "x2": 2.5, "x3": 2.3, "x4": 5.0, "x5": 7.2}, features)
+    test.Equal(map[string]interface{}{"x1": 1, "x2": 2.5, "x1_precomputed": 2.3, "x2_precomputed": 5.0, "x3": 7.2}, features)
 }
 
 func (test *FeaturesResolverTest) TestResolveWithPrecomputedFeaturesValidatesKeysPresence() {

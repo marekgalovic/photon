@@ -67,7 +67,7 @@ func (r *FeaturesResolver) resolveRequestFeatures(version *repositories.ModelVer
         if (feature.Required && (!exists || value == nil)) {
             return nil, fmt.Errorf("Required request feature '%s' is missing or null.", feature.Name)
         }
-        requestFeatures[feature.Name] = requestParams[feature.Name]
+        requestFeatures[feature.Alias] = requestParams[feature.Name]
     }
 
     return requestFeatures, nil
@@ -188,7 +188,7 @@ func (r *FeaturesResolver) queryFeatureSet(featureSetUid string, features []*rep
                 return
             }
         }
-        resolvedFeatures[feature.Name] = values[feature.Name]
+        resolvedFeatures[feature.Alias] = values[feature.Name]
     }
 
     select {
