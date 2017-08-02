@@ -13,4 +13,5 @@ func main() {
     }
 
     log.Info(config)
+    log.Info(config.NodeIp())
 }

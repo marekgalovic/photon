@@ -7,9 +7,10 @@ import (
     "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/storage/repositories";
     "github.com/marekgalovic/photon/server/storage/features";
-    "github.com/marekgalovic/photon/server/providers";
     "github.com/marekgalovic/photon/server/services";
     pb "github.com/marekgalovic/photon/server/protos";
+
+    "github.com/samuel/go-zookeeper/zk";
 
     "google.golang.org/grpc";
     log "github.com/Sirupsen/logrus"
@@ -46,18 +47,19 @@ func main() {
     }
     defer zookeeper.Close()
 
+    log.Info(zookeeper.Create("/photon/test/dir/abc", nil, int32(0), zk.WorldACL(zk.PermAll)))
+
     // Stores
     featuresRepository := repositories.NewFeaturesRepository(mysql)
     modelsRepository := repositories.NewModelsRepository(mysql)
+    instancesRepository := repositories.NewInstancesRepository(zookeeper)
     featuresStore := features.NewCassandraFeaturesStore(cassandra)
 
-    // Instance provider
-    zookeeperProvider := providers.NewZookeeperProvider(zookeeper)
-
     // Core
-    featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
     modelResolver := server.NewModelResolver(modelsRepository)
-    evaluator := server.NewEvaluator(modelResolver, featuresResolver, zookeeperProvider)
+    featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
+    instanceResolver := server.NewInstanceResolver(instancesRepository)
+    evaluator := server.NewEvaluator(modelResolver, featuresResolver, instanceResolver)
 
     // Services
     grpcServer := grpc.NewServer()

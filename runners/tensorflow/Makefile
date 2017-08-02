@@ -1,3 +1,9 @@
+install_tf:
+	export TF_TYPE="cpu"
+	export TARGET_DIRECTORY="/usr/local"
+	curl -L \
+   		"https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-$(go env GOOS)-x86_64-1.2.1.tar.gz" | sudo tar -C $(TARGET_DIRECTORY) -xz
+
 install:
 	go get -t -d -v ./...
 

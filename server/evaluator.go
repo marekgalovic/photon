@@ -1,27 +1,25 @@
 package server
 
 import (
-    "github.com/marekgalovic/photon/server/providers";
-
     log "github.com/Sirupsen/logrus"
 )
 
 type Evaluator struct {
     modelResolver *ModelResolver
     featuresResolver *FeaturesResolver
-    instanceProvider providers.InstanceProvider
+    instanceResolver *InstanceResolver
 }
 
-func NewEvaluator(modelResolver *ModelResolver, featuresResolver *FeaturesResolver, instanceProvider providers.InstanceProvider) *Evaluator {
+func NewEvaluator(modelResolver *ModelResolver, featuresResolver *FeaturesResolver, instanceResolver *InstanceResolver) *Evaluator {
     return &Evaluator{
         modelResolver: modelResolver,
         featuresResolver: featuresResolver,
-        instanceProvider: instanceProvider,
+        instanceResolver: instanceResolver,
     }
 }
 
 func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interface{}) (map[string]interface{}, error) {
-    _, version, err := e.modelResolver.GetModel(model_uid)
+    model, version, err := e.modelResolver.GetModel(model_uid)
     if err != nil {
         return nil, err
     }
@@ -31,11 +29,11 @@ func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interfac
         return nil, err
     }
 
-    return e.call(version.Uid, features)
+    return e.call(model.Uid, version.Uid, features)
 }
 
-func (e *Evaluator) call(versionUid string, features map[string]interface{}) (map[string]interface{}, error) {
-    instance, err := e.instanceProvider.Get(versionUid)
+func (e *Evaluator) call(modelUid, versionUid string, features map[string]interface{}) (map[string]interface{}, error) {
+    instance, err := e.instanceResolver.Get(modelUid, versionUid)
     if err != nil {
         return nil, err
     }

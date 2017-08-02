@@ -1,8 +1,8 @@
-# serving
+# Photon
 ML model serving service.
 
 ## Features
-- Serving of many model kinds (pmml, tensorfow, pickled python)
+- Serving different model kinds (pmml, tensorfow, ...)
 - Static features store
 - A/B testing
 - Monitoring
