@@ -7,6 +7,7 @@ import (
     "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/storage/repositories";
     "github.com/marekgalovic/photon/server/storage/features";
+    "github.com/marekgalovic/photon/server/providers";
     "github.com/marekgalovic/photon/server/services";
     pb "github.com/marekgalovic/photon/server/protos";
 
@@ -39,15 +40,24 @@ func main() {
     }
     defer cassandra.Close()
 
+    zookeeper, err := storage.NewZookeeper(config.Zookeeper)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer zookeeper.Close()
+
     // Stores
     featuresRepository := repositories.NewFeaturesRepository(mysql)
     modelsRepository := repositories.NewModelsRepository(mysql)
     featuresStore := features.NewCassandraFeaturesStore(cassandra)
 
+    // Instance provider
+    zookeeperProvider := providers.NewZookeeperProvider(zookeeper)
+
     // Core
     featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
     modelResolver := server.NewModelResolver(modelsRepository)
-    evaluator := server.NewEvaluator(modelResolver, featuresResolver)
+    evaluator := server.NewEvaluator(modelResolver, featuresResolver, zookeeperProvider)
 
     // Services
     grpcServer := grpc.NewServer()

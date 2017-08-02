@@ -4,6 +4,7 @@ import (
     "os";
     "fmt";
     "flag";
+    "time";
     "strings";
     "path/filepath";
 
@@ -21,6 +22,7 @@ type Config struct {
     Port int
     Mysql storage.MysqlConfig
     Cassandra storage.CassandraConfig
+    Zookeeper storage.ZookeeperConfig
 }
 
 func NewConfig() (*Config, error) {
@@ -39,6 +41,10 @@ func NewConfig() (*Config, error) {
             Keyspace: "development",
             Username: "cassandra",
             Password: "cassandra",
+        },
+        Zookeeper: storage.ZookeeperConfig{
+            Nodes: []string{"127.0.0.1:2181"},
+            SessionTimeout: 1 * time.Second,
         },
     }
 

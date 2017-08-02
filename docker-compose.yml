@@ -18,6 +18,13 @@ services:
       - '9160:9160'
     volumes:
       - 'cassandra_data:/bitnami'
+  zookeeper:
+    image: zookeeper
+    restart: always
+    ports:
+        - 2181:2181
+    environment:
+        ZOO_MY_ID: 1
 
 volumes:
   cassandra_data:
