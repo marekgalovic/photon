@@ -2,6 +2,7 @@ package storage
 
 import (
     "fmt";
+    "time";
 
     log "github.com/Sirupsen/logrus"
 )
@@ -20,6 +21,14 @@ func NewTestCassandra() *Cassandra {
         log.Fatal(err)
     }
     return cassandra
+}
+
+func NewTestZookeeper() *Zookeeper {
+    zookeeper, err := NewZookeeper(ZookeeperConfig{Nodes: []string{"127.0.0.1:2181"}, SessionTimeout: 100 * time.Millisecond, BasePath: "photon_test"})
+    if err != nil {
+        log.Fatal(err)
+    }
+    return zookeeper
 }
 
 func CleanupMysql(db *Mysql, tables ...string) {

@@ -4,6 +4,8 @@ import (
     "path/filepath";
 
     "github.com/marekgalovic/photon/server/storage";
+
+    "github.com/samuel/go-zookeeper/zk";
 )
 
 type Instance struct {
@@ -26,7 +28,22 @@ func (r *InstancesRepository) List(versionUid string) ([]*Instance, error) {
         return nil, err
     }
 
+    return r.scanInstances(children)
+}
+
+func (r *InstancesRepository) Watch(versionUid string) (<-chan zk.Event, error) {
+    _, event, err := r.zk.ChildrenDataW(r.instancesPath(versionUid))
+
+    return event, err
+}
+
+func (r *InstancesRepository) instancesPath(versionUid string) string {
+    return filepath.Join("instances", versionUid)
+}
+
+func (r *InstancesRepository) scanInstances(children map[string]*storage.ZNode) ([]*Instance, error) {
     instances := make([]*Instance, 0, len(children))
+
     for name, znode := range children {
         instance := &Instance{Uid: name}
 
@@ -36,19 +53,6 @@ func (r *InstancesRepository) List(versionUid string) ([]*Instance, error) {
         
         instances = append(instances, instance)
     }
+
     return instances, nil
-}
-
-func (r *InstancesRepository) ListW(versionUid string) ([]*Instance, error) {
-    _, event, err := r.zk.ChildrenW(r.instancesPath(versionUid))
-    if err != nil {
-        return nil, err
-    }
-
-    <- event
-    return r.List(versionUid)
-}
-
-func (r *InstancesRepository) instancesPath(versionUid string) string {
-    return filepath.Join("instances", versionUid)
 }

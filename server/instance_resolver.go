@@ -51,12 +51,20 @@ func (r *InstanceResolver) watchInstances(modelVersionUid string) {
     watchLogger := log.WithFields(log.Fields{"model_version_uid": modelVersionUid})
     watchLogger.Debug("Setting instances watch.")
     for {
-        instances, err := r.instancesRepository.ListW(modelVersionUid)
+        event, err := r.instancesRepository.Watch(modelVersionUid)
         if err != nil {
-            watchLogger.Errorf("Instances watch failed: %v", err)
+            watchLogger.Errorf("Set instances watch failed: %v", err)
             return
         }
-        
+
+        <- event
+
+        instances, err := r.instancesRepository.List(modelVersionUid)
+        if err != nil {
+            watchLogger.Errorf("Fetch updated instances failed: %v", err)
+            return
+        }
+
         watchLogger.Debug("Instances updated.")
         r.instancesCache.Set(modelVersionUid, instances, cache.DefaultExpiration)
     }

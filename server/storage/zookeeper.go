@@ -133,7 +133,7 @@ func (z *Zookeeper) Create(path string, data interface{}, flags int32, acl []zk.
             continue
         }
 
-        if _, err = z.conn.Create(zNodePath, nil, flags, zk.WorldACL(zk.PermAll)); err != nil {
+        if _, err = z.conn.Create(zNodePath, nil, int32(0), zk.WorldACL(zk.PermAll)); err != nil {
             return "", err
         }
     }
