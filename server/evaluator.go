@@ -1,20 +1,26 @@
 package server
 
 import (
+    "github.com/marekgalovic/photon/server/balancer";
+    "github.com/marekgalovic/photon/server/storage/repositories";
+
+    "google.golang.org/grpc";
     log "github.com/Sirupsen/logrus"
 )
 
 type Evaluator struct {
     modelResolver *ModelResolver
     featuresResolver *FeaturesResolver
-    instanceResolver *InstanceResolver
+    instancesRepository *repositories.InstancesRepository
+    instancesResolver *balancer.Resolver
 }
 
-func NewEvaluator(modelResolver *ModelResolver, featuresResolver *FeaturesResolver, instanceResolver *InstanceResolver) *Evaluator {
+func NewEvaluator(modelResolver *ModelResolver, featuresResolver *FeaturesResolver, instancesRepository *repositories.InstancesRepository) *Evaluator {
     return &Evaluator{
         modelResolver: modelResolver,
         featuresResolver: featuresResolver,
-        instanceResolver: instanceResolver,
+        instancesRepository: instancesRepository,
+        instancesResolver: balancer.NewResolver(instancesRepository),
     }
 }
 
@@ -29,15 +35,15 @@ func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interfac
         return nil, err
     }
 
-    return e.call(model.Uid, version.Uid, features)
-}
+    log.Info(model)
+    log.Info(version)
+    log.Info(features)
 
-func (e *Evaluator) call(modelUid, versionUid string, features map[string]interface{}) (map[string]interface{}, error) {
-    instance, err := e.instanceResolver.Get(versionUid)
+    conn, err := grpc.Dial(version.Uid, grpc.WithInsecure(), grpc.WithBalancer(grpc.RoundRobin(e.instancesResolver)))
     if err != nil {
         return nil, err
     }
-
-    log.Info(instance)
-    return nil, nil
+    conn.Close()
+    
+    return features, nil
 }

@@ -44,8 +44,8 @@ func (test *InstancesRepositoryTest) TestList() {
 
     test.Require().Nil(err)
     test.Require().Equal(2, len(instances))
-    test.Equal(&Instance{Uid: "instance_uid_a", Address: "127.0.0.1", Port: 5022}, instances[0])
-    test.Equal(&Instance{Uid: "instance_uid_b", Address: "0.0.0.0", Port: 5023}, instances[1])
+    test.Equal(&Instance{Uid: "instance_uid_a", Address: "127.0.0.1", Port: 5022}, instances["instance_uid_a"])
+    test.Equal(&Instance{Uid: "instance_uid_b", Address: "0.0.0.0", Port: 5023}, instances["instance_uid_b"])
 }
 
 func (test *InstancesRepositoryTest) TestWatch() {

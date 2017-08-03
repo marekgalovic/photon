@@ -45,7 +45,7 @@ func NewConfig() (*Config, error) {
         Zookeeper: storage.ZookeeperConfig{
             Nodes: []string{"127.0.0.1:2181"},
             SessionTimeout: 1 * time.Second,
-            BasePath: "photon",
+            BasePath: "/photon",
         },
     }
 
@@ -61,27 +61,40 @@ func (c *Config) parse() error {
     c.Root = c.getEnvDefault("PHOTON_ROOT", c.Root)
     c.ConfigPath = c.getEnvDefault("PHOTON_CONF", filepath.Join(c.Root, "config", fmt.Sprintf("%s.tml", c.Env)))
 
-    c.parseFlags()
-
     _, err := toml.DecodeFile(c.ConfigPath, &c)
-    return err
+    if err != nil {
+        return err
+    }
+
+    c.parseFlags()
+    return nil
 }
 
 func (c *Config) parseFlags() {
     flag.StringVar(&c.Env, "env", c.Env, "Server environment.")
     flag.StringVar(&c.Root, "root", c.Root, "Server root path.")
     flag.StringVar(&c.ConfigPath, "conf", c.ConfigPath, "Server config file.")
-    flag.StringVar(&c.Address, "address", "0.0.0.0", "Server host.")
-    flag.IntVar(&c.Port, "port", 5021, "Server port.")
-    flag.StringVar(&c.Mysql.User, "mysql-user", "root", "Mysql username.")
-    flag.StringVar(&c.Mysql.Password, "mysql-password", "", "Mysql password.")
-    flag.StringVar(&c.Mysql.Host, "mysql-host", "127.0.0.1", "Mysql host.")
-    flag.IntVar(&c.Mysql.Port, "mysql-port", 3306, "Mysql port.")
-    flag.StringVar(&c.Mysql.Database, "mysql-database", "photon", "Mysql database.")
-    c.Cassandra.Nodes = strings.Split(*flag.String("cassandra-nodes", "127.0.0.1", "Cassandra nodes (comma delimited)."), ",")
-    flag.StringVar(&c.Cassandra.Keyspace, "cassandra-keyspace", "photon", "Cassandra keyspace.")
-    flag.StringVar(&c.Cassandra.Username, "cassandra-user", "cassandra", "Cassandra user.")
-    flag.StringVar(&c.Cassandra.Password, "cassandra-password", "cassandra", "Cassandra password.")
+    // Listener
+    flag.StringVar(&c.Address, "address", c.Address, "Server host.")
+    flag.IntVar(&c.Port, "port", c.Port, "Server port.")
+    // Mysql
+    flag.StringVar(&c.Mysql.User, "mysql-user", c.Mysql.User, "Mysql username.")
+    if c.Mysql.Password == "" {
+        flag.StringVar(&c.Mysql.Password, "mysql-password", "", "Mysql password.")
+    }
+    flag.StringVar(&c.Mysql.Host, "mysql-host", c.Mysql.Host, "Mysql host.")
+    flag.IntVar(&c.Mysql.Port, "mysql-port", c.Mysql.Port, "Mysql port.")
+    flag.StringVar(&c.Mysql.Database, "mysql-database", c.Mysql.Database, "Mysql database.")
+    // Cassandra
+    c.Cassandra.Nodes = strings.Split(*flag.String("cassandra-nodes", strings.Join(c.Cassandra.Nodes, ","), "Cassandra nodes (comma delimited)."), ",")
+    flag.StringVar(&c.Cassandra.Keyspace, "cassandra-keyspace", c.Cassandra.Keyspace, "Cassandra keyspace.")
+    flag.StringVar(&c.Cassandra.Username, "cassandra-user", c.Cassandra.Username, "Cassandra user.")
+    if c.Cassandra.Password == "" {
+        flag.StringVar(&c.Cassandra.Password, "cassandra-password", "", "Cassandra password.")
+    }
+    // Zookeeper
+    c.Zookeeper.Nodes = strings.Split(*flag.String("zookeeper-nodes", strings.Join(c.Zookeeper.Nodes, ","), "Zookeeper nodes (comma delimited)."), ",")
+    flag.StringVar(&c.Zookeeper.BasePath, "zookeeper-basepath", c.Zookeeper.BasePath, "Zookeeper base path.")
 
     flag.Parse()
 }

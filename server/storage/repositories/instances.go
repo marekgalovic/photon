@@ -1,6 +1,7 @@
 package repositories
 
 import (
+    "fmt";
     "path/filepath";
 
     "github.com/marekgalovic/photon/server/storage";
@@ -14,6 +15,10 @@ type Instance struct {
     Port int
 }
 
+func (i *Instance) FullAddress() string {
+    return fmt.Sprintf("%s:%d", i.Address, i.Port)
+}
+
 type InstancesRepository struct {
     zk *storage.Zookeeper
 }
@@ -22,7 +27,7 @@ func NewInstancesRepository(zk *storage.Zookeeper) *InstancesRepository {
     return &InstancesRepository{zk: zk}
 }
 
-func (r *InstancesRepository) List(versionUid string) ([]*Instance, error) {
+func (r *InstancesRepository) List(versionUid string) (map[string]*Instance, error) {
     children, err := r.zk.ChildrenData(r.instancesPath(versionUid))
     if err != nil {
         return nil, err
@@ -41,17 +46,15 @@ func (r *InstancesRepository) instancesPath(versionUid string) string {
     return filepath.Join("instances", versionUid)
 }
 
-func (r *InstancesRepository) scanInstances(children map[string]*storage.ZNode) ([]*Instance, error) {
-    instances := make([]*Instance, 0, len(children))
+func (r *InstancesRepository) scanInstances(children map[string]*storage.ZNode) (map[string]*Instance, error) {
+    instances := make(map[string]*Instance)
 
-    for name, znode := range children {
-        instance := &Instance{Uid: name}
-
+    for uid, znode := range children {
+        instance := &Instance{Uid: uid}
         if err := znode.Scan(&instance); err != nil {
             return nil, err
         }
-        
-        instances = append(instances, instance)
+        instances[uid] = instance
     }
 
     return instances, nil

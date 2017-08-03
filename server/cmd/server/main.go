@@ -54,8 +54,7 @@ func main() {
     // Core
     modelResolver := server.NewModelResolver(modelsRepository)
     featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
-    instanceResolver := server.NewInstanceResolver(instancesRepository)
-    evaluator := server.NewEvaluator(modelResolver, featuresResolver, instanceResolver)
+    evaluator := server.NewEvaluator(modelResolver, featuresResolver, instancesRepository)
 
     // Services
     grpcServer := grpc.NewServer()
