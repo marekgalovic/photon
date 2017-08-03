@@ -45,6 +45,7 @@ func NewConfig() (*Config, error) {
         Zookeeper: storage.ZookeeperConfig{
             Nodes: []string{"127.0.0.1:2181"},
             SessionTimeout: 1 * time.Second,
+            BasePath: "photon",
         },
     }
 

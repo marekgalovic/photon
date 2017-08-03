@@ -15,6 +15,16 @@ type ZookeeperConfig struct {
     BasePath string
 }
 
+type ZNode struct {
+    Name string
+    FullPath string
+    Data []byte
+}
+
+func (n *ZNode) Scan(v interface{}) error {
+    return json.Unmarshal(n.Data, &v)
+}
+
 type Zookeeper struct {
     conn *zk.Conn
     config ZookeeperConfig
@@ -42,22 +52,54 @@ func (z *Zookeeper) Exists(path string) (bool, error) {
     return exists, err
 }
 
+func (z *Zookeeper) Watch(path string) (<-chan zk.Event, error) {
+    _, _, event, err := z.conn.GetW(z.fullPath(path))
+
+    return event, err
+}
+
 func (z *Zookeeper) Children(path string) ([]string, error) {
     children, _, err := z.conn.Children(z.fullPath(path))
 
     return children, err
 }
 
-func (z *Zookeeper) Get(path string) (interface{}, error) {
+func (z *Zookeeper) ChildrenW(path string) ([]string, <-chan zk.Event, error) {
+    children, _, event, err := z.conn.ChildrenW(z.fullPath(path))
+
+    return children, event, err
+}
+
+func (z *Zookeeper) ChildrenData(path string) (map[string]*ZNode, error) {
+    children, err := z.Children(path)
+    if err != nil {
+        return nil, err
+    }
+
+    return z.getChildrenData(path, children)
+}
+
+func (z *Zookeeper) ChildrenDataW(path string) (map[string]*ZNode, <-chan zk.Event, error) {
+    children, event, err := z.ChildrenW(path)
+    if err != nil {
+        return nil, nil, err
+    }
+
+    childrenWithData, err := z.getChildrenData(path, children)
+    return childrenWithData, event, err
+}
+
+func (z *Zookeeper) Get(path string) (*ZNode, error) {
     data, _, err := z.conn.Get(z.fullPath(path))
     if err != nil {
         return nil, err
     }
 
-    var unmarshaledData interface{}
-    err = json.Unmarshal(data, &unmarshaledData)
-
-    return unmarshaledData, err
+    return &ZNode {
+        Name: filepath.Base(path),
+        FullPath: z.fullPath(path),
+        Data: data,
+    }, nil
 }
 
 func (z *Zookeeper) Set(path string, data interface{}, version int32) error {
@@ -101,6 +143,20 @@ func (z *Zookeeper) Create(path string, data interface{}, flags int32, acl []zk.
 
 func (z *Zookeeper) Delete(path string, version int32) error {
     return z.conn.Delete(z.fullPath(path), version)
+}
+
+func (z *Zookeeper) getChildrenData(path string, children []string) (map[string]*ZNode, error) {
+    result := make(map[string]*ZNode)
+
+    for _, child := range children {
+        data, err := z.Get(filepath.Join(path, child))
+        if err != nil {
+            return nil, err
+        }
+        result[child] = data
+    }
+
+    return result, nil
 }
 
 func (z *Zookeeper) fullPath(path string) string {

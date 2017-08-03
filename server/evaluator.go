@@ -33,7 +33,7 @@ func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interfac
 }
 
 func (e *Evaluator) call(modelUid, versionUid string, features map[string]interface{}) (map[string]interface{}, error) {
-    instance, err := e.instanceResolver.Get(modelUid, versionUid)
+    instance, err := e.instanceResolver.Get(versionUid)
     if err != nil {
         return nil, err
     }

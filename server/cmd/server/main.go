@@ -10,10 +10,8 @@ import (
     "github.com/marekgalovic/photon/server/services";
     pb "github.com/marekgalovic/photon/server/protos";
 
-    "github.com/samuel/go-zookeeper/zk";
-
     "google.golang.org/grpc";
-    log "github.com/Sirupsen/logrus"
+    log "github.com/Sirupsen/logrus";
 )
 
 func main() {
@@ -46,8 +44,6 @@ func main() {
         log.Fatal(err)
     }
     defer zookeeper.Close()
-
-    log.Info(zookeeper.Create("/photon/test/dir/abc", nil, int32(0), zk.WorldACL(zk.PermAll)))
 
     // Stores
     featuresRepository := repositories.NewFeaturesRepository(mysql)
