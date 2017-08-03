@@ -55,15 +55,10 @@ func (test *InstancesRepositoryTest) TestWatch() {
         case <- createSig:
             _, err := test.zk.Create("/instances/model_version_uid_a/instance_uid_c", map[string]interface{}{"address": "0.0.0.0", "port": 5024}, int32(1), zk.WorldACL(zk.PermAll))
             test.Require().Nil(err)
-            return
         case <- time.After(1 * time.Second):
             return
         }
     }()
-
-    instances, err := test.repository.List("model_version_uid_a")
-    test.Require().Nil(err)
-    test.Equal(2, len(instances))
 
     event, err := test.repository.Watch("model_version_uid_a")
     test.Require().Nil(err)

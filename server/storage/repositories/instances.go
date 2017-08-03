@@ -32,7 +32,7 @@ func (r *InstancesRepository) List(versionUid string) ([]*Instance, error) {
 }
 
 func (r *InstancesRepository) Watch(versionUid string) (<-chan zk.Event, error) {
-    _, event, err := r.zk.ChildrenDataW(r.instancesPath(versionUid))
+    _, event, err := r.zk.ChildrenW(r.instancesPath(versionUid))
 
     return event, err
 }
