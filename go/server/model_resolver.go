@@ -3,7 +3,6 @@
 import (
     "fmt";
     "time";
-    // "math/rand";
 
     "github.com/marekgalovic/photon/go/core/metrics";
     "github.com/marekgalovic/photon/go/core/storage/repositories";

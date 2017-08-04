@@ -3,14 +3,34 @@ package photon;
 
 message ValueInterface {
     oneof value {
-        bool value_boolean      = 1;
-        int32 value_int32       = 2;
-        int64 value_int64       = 3;
-        float value_float32     = 4;
-        double value_float64    = 5;
-        string value_string     = 6;
-        bytes value_bytes       = 7;
+        bool value_boolean          = 1;
+        int32 value_int32           = 2;
+        ListInt32 list_int32        = 3;
+        int64 value_int64           = 4;
+        ListInt64 list_int64        = 5;
+        float value_float32         = 6;
+        ListFloat32 list_float32    = 7;
+        double value_float64        = 8;
+        ListFloat64 list_float64    = 9;
+        string value_string         = 10;
+        bytes value_bytes           = 11;
     }
+}
+
+message ListInt32 {
+    repeated int32 value = 1;
+}
+
+message ListInt64 {
+    repeated int64 value = 1;
+}
+
+message ListFloat32 {
+    repeated float value = 1;
+}
+
+message ListFloat64 {
+    repeated double value = 1;
 }
 
 message EmptyResponse {}

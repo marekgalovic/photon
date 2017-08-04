@@ -23,12 +23,20 @@ func InterfaceMapToValueInterfacePb(features map[string]interface{}) (map[string
             result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ValueInt64{ValueInt64: int64(value.(int))}}
         case int32:
             result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ValueInt32{ValueInt32: value.(int32)}}
+        case []int32:
+            result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ListInt32{ListInt32: &pb.ListInt32{Value: value.([]int32)}}}
         case int64:
             result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ValueInt64{ValueInt64: value.(int64)}}
+        case []int64:
+            result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ListInt64{ListInt64: &pb.ListInt64{Value: value.([]int64)}}}
         case float32:
             result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ValueFloat32{ValueFloat32: value.(float32)}}
+        case []float32:
+            result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ListFloat32{ListFloat32: &pb.ListFloat32{Value: value.([]float32)}}}
         case float64:
             result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ValueFloat64{ValueFloat64: value.(float64)}}
+        case []float64:
+            result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ListFloat64{ListFloat64: &pb.ListFloat64{Value: value.([]float64)}}}
         case string:
             result[key] = &pb.ValueInterface{Value: &pb.ValueInterface_ValueString{ValueString: value.(string)}}
         case []byte:
@@ -55,12 +63,20 @@ func ValueInterfacePbToInterfaceMap(features map[string]*pb.ValueInterface) (map
             result[key] = value.GetValueBoolean()
         case *pb.ValueInterface_ValueInt32:
             result[key] = value.GetValueInt32()
+        case *pb.ValueInterface_ListInt32:
+            result[key] = value.GetListInt32().GetValue()
         case *pb.ValueInterface_ValueInt64:
             result[key] = value.GetValueInt64()
+        case *pb.ValueInterface_ListInt64:
+            result[key] = value.GetListInt64().GetValue()
         case *pb.ValueInterface_ValueFloat32:
             result[key] = value.GetValueFloat32()
+        case *pb.ValueInterface_ListFloat32:
+            result[key] = value.GetListFloat32().GetValue()
         case *pb.ValueInterface_ValueFloat64:
             result[key] = value.GetValueFloat64()
+        case *pb.ValueInterface_ListFloat64:
+            result[key] = value.GetListFloat64().GetValue()
         case *pb.ValueInterface_ValueString:
             result[key] = value.GetValueString()
         case *pb.ValueInterface_ValueBytes:

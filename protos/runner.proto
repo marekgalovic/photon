@@ -1,0 +1,17 @@
+syntax = "proto3";
+package photon;
+
+import "protos/core.proto";
+
+service RunnerService {
+    rpc Evaluate(RunnerEvaluateRequest) returns (RunnerEvaluateResponse);
+}
+
+message RunnerEvaluateRequest {
+    string version_uid                  = 1;
+    map<string,ValueInterface> features = 2;
+}
+
+message RunnerEvaluateResponse {
+    map<string,ValueInterface> result = 1;
+}

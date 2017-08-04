@@ -40,7 +40,7 @@ func main() {
     go modelManager.Watch()
 
     grpcServer := grpc.NewServer()
-    pb.RegisterEvaluatorServiceServer(grpcServer, runner.NewEvaluator(modelManager))
+    pb.RegisterRunnerServiceServer(grpcServer, runner.NewRunner(modelManager))
 
     log.Infof("Listening: %s", config.BindAddress())
     grpcServer.Serve(listener)

@@ -55,6 +55,7 @@ func main() {
     modelResolver := server.NewModelResolver(modelsRepository)
     featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
     evaluator := server.NewEvaluator(modelResolver, featuresResolver, instancesRepository)
+    defer evaluator.Close()
 
     // Services
     grpcServer := grpc.NewServer()
