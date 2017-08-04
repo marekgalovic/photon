@@ -7,6 +7,7 @@ import (
     "github.com/marekgalovic/photon/server/storage";
 
     "github.com/samuel/go-zookeeper/zk";
+    "github.com/satori/go.uuid";
 )
 
 type Instance struct {
@@ -36,14 +37,25 @@ func (r *InstancesRepository) List(versionUid string) (map[string]*Instance, err
     return r.scanInstances(children)
 }
 
+func (r *InstancesRepository) Register(versionUid, address string, port int) (string, error) {
+    uid := fmt.Sprintf("%s", uuid.NewV4())
+    path := filepath.Join(r.instancesPath(versionUid), uid)
+
+    _, err := r.zk.Create(path, map[string]interface{}{"address": address, "port": port}, zk.FlagEphemeral, zk.WorldACL(zk.PermRead))
+
+    return uid, err
+}
+
+func (r *InstancesRepository) Unregister(versionUid, uid string) error {
+    path := filepath.Join(r.instancesPath(versionUid), uid)
+
+    return r.zk.Delete(path, -1)
+}
+
 func (r *InstancesRepository) Watch(versionUid string) (<-chan zk.Event, error) {
     _, event, err := r.zk.ChildrenW(r.instancesPath(versionUid))
 
     return event, err
-}
-
-func (r *InstancesRepository) instancesPath(versionUid string) string {
-    return filepath.Join("instances", versionUid)
 }
 
 func (r *InstancesRepository) scanInstances(children map[string]*storage.ZNode) (map[string]*Instance, error) {
@@ -58,4 +70,8 @@ func (r *InstancesRepository) scanInstances(children map[string]*storage.ZNode) 
     }
 
     return instances, nil
+}
+
+func (r *InstancesRepository) instancesPath(versionUid string) string {
+    return filepath.Join("instances", versionUid)
 }

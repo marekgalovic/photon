@@ -1,6 +1,8 @@
 package runner
 
-type Evaluator struct {}
+type Evaluator struct {
+    
+}
 
 func NewEvaluator() *Evaluator {
     return &Evaluator{}

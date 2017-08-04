@@ -4,7 +4,11 @@ import (
     "os";
     "fmt";
     "flag";
+    "time";
+    "strings";
     "net";
+
+    "github.com/marekgalovic/photon/server/storage"
 )
 
 type Config struct {
@@ -13,46 +17,62 @@ type Config struct {
     ModelsDir string
     Address string
     Port int
+    Zookeeper storage.ZookeeperConfig
+}
+
+func getEnvDefault(key string, defaultValue string) string {
+    if envValue, exists := os.LookupEnv(key); exists {
+        return envValue
+    }
+    return defaultValue
 }
 
 func NewConfig() (*Config, error) {
-    config := &Config{}
+    config := &Config{
+        Env: getEnvDefault("PHOTON_ENV", "development"),
+        ModelUid: getEnvDefault("PHOTON_MODEL_UID", ""),
+        ModelsDir: getEnvDefault("PHOTON_MODELS_DIR", "./"),
+        Port: 5022,
+        Zookeeper: storage.ZookeeperConfig{
+            Nodes: []string{"127.0.0.1:2181"},
+            SessionTimeout: 1 * time.Second,
+            BasePath: "/photon",
+        },
+    }
 
-    config.Env = config.getEnvDefault("PHOTON_ENV", "development")
-    config.ModelUid = config.getEnvDefault("PHOTON_MODEL_UID", "")
-    config.ModelsDir = config.getEnvDefault("PHOTON_MODELS_DIR", "./")
+    nodeIp, err := config.NodeIp()
+    if err != nil {
+        return nil, err
+    }
+    config.Address = nodeIp
 
-    config.parseFlags()
-
-    if err := config.validate(); err != nil {
+    if err := config.parseFlags(); err != nil {
         return nil, err
     }
 
     return config, nil
 }
 
-func (c *Config) parseFlags() {
+func (c *Config) parseFlags() error {
     flag.StringVar(&c.Env, "env", c.Env, "Server environment.")
     flag.StringVar(&c.ModelUid, "model-uid", c.ModelUid, "Model uid.")
     flag.StringVar(&c.ModelsDir, "models-dir", c.ModelsDir, "Models directory.")
-    flag.StringVar(&c.Address, "address", "0.0.0.0", "Server address.")
+    // Listener
+    flag.StringVar(&c.Address, "address", c.Address, "Server address.")
     flag.IntVar(&c.Port, "port", 5022, "Server port.")
+    // Zookeeper
+    c.Zookeeper.Nodes = strings.Split(*flag.String("zookeeper-nodes", strings.Join(c.Zookeeper.Nodes, ","), "Zookeeper nodes (comma delimited)."), ",")
+    flag.StringVar(&c.Zookeeper.BasePath, "zookeeper-basepath", c.Zookeeper.BasePath, "Zookeeper base path.")
 
     flag.Parse()
+    return c.validate()
 }
 
 func (c *Config) validate() error {
-    if c.ModelUid == "" {
-        return fmt.Errorf("No model uid provided.")
-    }
+    // if c.ModelUid == "" {
+    //     return fmt.Errorf("No model uid provided.")
+    // }
     return nil
-}
-
-func (c *Config) getEnvDefault(key string, defaultValue string) string {
-    if envValue, exists := os.LookupEnv(key); exists {
-        return envValue
-    }
-    return defaultValue
 }
 
 func (c *Config) NodeIp() (string, error) {

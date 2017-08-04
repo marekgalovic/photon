@@ -6,12 +6,14 @@ import (
     "github.com/marekgalovic/photon/server";
     "github.com/marekgalovic/photon/server/storage";
     "github.com/marekgalovic/photon/server/storage/repositories";
-    "github.com/marekgalovic/photon/server/storage/features";
-    "github.com/marekgalovic/photon/server/services";
-    pb "github.com/marekgalovic/photon/server/protos";
+    // "github.com/marekgalovic/photon/server/storage/features";
+    // "github.com/marekgalovic/photon/server/services";
+    // pb "github.com/marekgalovic/photon/server/protos";
 
-    "google.golang.org/grpc";
+    // "google.golang.org/grpc";
     log "github.com/Sirupsen/logrus";
+
+    "github.com/marekgalovic/photon/server/balancer";
 )
 
 func main() {
@@ -33,11 +35,11 @@ func main() {
     }
     defer mysql.Close()
 
-    cassandra, err := storage.NewCassandra(config.Cassandra)
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer cassandra.Close()
+    // cassandra, err := storage.NewCassandra(config.Cassandra)
+    // if err != nil {
+    //     log.Fatal(err)
+    // }
+    // defer cassandra.Close()
 
     zookeeper, err := storage.NewZookeeper(config.Zookeeper)
     if err != nil {
@@ -46,22 +48,38 @@ func main() {
     defer zookeeper.Close()
 
     // Stores
-    featuresRepository := repositories.NewFeaturesRepository(mysql)
-    modelsRepository := repositories.NewModelsRepository(mysql)
+    // featuresRepository := repositories.NewFeaturesRepository(mysql)
+    // modelsRepository := repositories.NewModelsRepository(mysql)
     instancesRepository := repositories.NewInstancesRepository(zookeeper)
-    featuresStore := features.NewCassandraFeaturesStore(cassandra)
+    // featuresStore := features.NewCassandraFeaturesStore(cassandra)
 
     // Core
-    modelResolver := server.NewModelResolver(modelsRepository)
-    featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
-    evaluator := server.NewEvaluator(modelResolver, featuresResolver, instancesRepository)
+    // modelResolver := server.NewModelResolver(modelsRepository)
+    // featuresResolver := server.NewFeaturesResolver(featuresRepository, featuresStore)
+    // evaluator := server.NewEvaluator(modelResolver, featuresResolver, instancesRepository)
+
+    watcher, err := balancer.NewResolver(instancesRepository).Resolve("model_version_uid_a")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer watcher.Close()
+
+    for {
+        updates, err := watcher.Next()
+        if err != nil {
+            log.Errorf("Watcher error: %v", err)
+        }
+        for _, update := range updates {
+            log.Info(update.Op, update.Addr)
+        }
+    }
 
     // Services
-    grpcServer := grpc.NewServer()
-    pb.RegisterEvaluatorServiceServer(grpcServer, services.NewEvaluatorService(evaluator))
-    pb.RegisterModelsServiceServer(grpcServer, services.NewModelsService(modelsRepository))
-    pb.RegisterFeaturesServiceServer(grpcServer, services.NewFeaturesService(featuresRepository))
+    // grpcServer := grpc.NewServer()
+    // pb.RegisterEvaluatorServiceServer(grpcServer, services.NewEvaluatorService(evaluator))
+    // pb.RegisterModelsServiceServer(grpcServer, services.NewModelsService(modelsRepository))
+    // pb.RegisterFeaturesServiceServer(grpcServer, services.NewFeaturesService(featuresRepository))
 
-    log.Infof("Listening: %s", config.BindAddress())
-    grpcServer.Serve(listener)
+    // log.Infof("Listening: %s", config.BindAddress())
+    // grpcServer.Serve(listener)
 }
