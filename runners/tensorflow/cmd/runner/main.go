@@ -2,8 +2,8 @@ package main
 
 import (
     "github.com/marekgalovic/photon/runners/tensorflow";
-    "github.com/marekgalovic/photon/server/storage";
-    "github.com/marekgalovic/photon/server/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/storage";
+    "github.com/marekgalovic/photon/go/core/storage/repositories";
 
     log "github.com/Sirupsen/logrus"
 )

@@ -4,7 +4,7 @@ import (
     "fmt";
     "path/filepath";
 
-    "github.com/marekgalovic/photon/server/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/storage/repositories";
 
     "github.com/fsnotify/fsnotify";
     log "github.com/Sirupsen/logrus"
@@ -85,7 +85,7 @@ func (m *ModelManager) create(fileName string) error {
 func (m *ModelManager) remove(fileName string) error {
     uid, exists := m.zookeeperUids[fileName]
     if !exists {
-        return fmt.Errorf("Unknown uid for model: %s", fileName)
+        return fmt.Errorf("Unknown model uid: %s", fileName)
     }
 
     return m.instancesRepository.Unregister(fileName, uid)

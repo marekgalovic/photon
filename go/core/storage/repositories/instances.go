@@ -11,7 +11,7 @@ import (
 )
 
 type Instance struct {
-    Uid string
+    Uid string 
     Address string
     Port int
 }
@@ -38,12 +38,14 @@ func (r *InstancesRepository) List(versionUid string) (map[string]*Instance, err
 }
 
 func (r *InstancesRepository) Register(versionUid, address string, port int) (string, error) {
-    uid := fmt.Sprintf("%s", uuid.NewV4())
-    path := filepath.Join(r.instancesPath(versionUid), uid)
+    name := filepath.Join(r.instancesPath(versionUid), fmt.Sprintf("%s", uuid.NewV4()))
 
-    _, err := r.zk.Create(path, map[string]interface{}{"address": address, "port": port}, zk.FlagEphemeral, zk.WorldACL(zk.PermRead))
+    fullPath, err := r.zk.CreateEphemeral(name, &Instance{Address: address, Port: port}, zk.WorldACL(zk.PermRead))
+    if err != nil {
+        return "", err
+    }
 
-    return uid, err
+    return filepath.Base(fullPath), nil
 }
 
 func (r *InstancesRepository) Unregister(versionUid, uid string) error {
@@ -62,10 +64,11 @@ func (r *InstancesRepository) scanInstances(children map[string]*storage.ZNode) 
     instances := make(map[string]*Instance)
 
     for uid, znode := range children {
-        instance := &Instance{Uid: uid}
+        instance := &Instance{}
         if err := znode.Scan(&instance); err != nil {
             return nil, err
         }
+        instance.Uid = uid
         instances[uid] = instance
     }
 

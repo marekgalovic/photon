@@ -8,7 +8,7 @@ import (
     "strings";
     "net";
 
-    "github.com/marekgalovic/photon/server/storage"
+    "github.com/marekgalovic/photon/go/core/storage"
 )
 
 type Config struct {

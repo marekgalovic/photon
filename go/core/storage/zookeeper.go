@@ -118,7 +118,33 @@ func (z *Zookeeper) Create(path string, data interface{}, flags int32, acl []zk.
         return "", err
     }
 
+    if err = z.ensurePath(path); err != nil {
+        return "", err
+    }
+
+    return z.conn.Create(z.fullPath(path), marshaledData, flags, acl)
+}
+
+func (z *Zookeeper) CreateEphemeral(path string, data interface{}, acl []zk.ACL) (string, error) {
+    marshaledData, err := json.Marshal(data)
+    if err != nil {
+        return "", err
+    } 
+
+    if err = z.ensurePath(path); err != nil {
+        return "", err
+    }
+
+    return z.conn.CreateProtectedEphemeralSequential(z.fullPath(path), marshaledData, acl) 
+}
+
+func (z *Zookeeper) Delete(path string, version int32) error {
+    return z.conn.Delete(z.fullPath(path), version)
+}
+
+func (z *Zookeeper) ensurePath(path string) error {
     pathParts := strings.Split(z.fullPath(path), "/")
+
     for i, _ := range pathParts {
         zNodePath := strings.Join(pathParts[:i], "/")
         if len(zNodePath) == 0 {
@@ -127,22 +153,18 @@ func (z *Zookeeper) Create(path string, data interface{}, flags int32, acl []zk.
 
         exists, _, err := z.conn.Exists(zNodePath)
         if err != nil {
-            return "", err
+            return err
         }
         if exists {
             continue
         }
 
         if _, err = z.conn.Create(zNodePath, nil, int32(0), zk.WorldACL(zk.PermAll)); err != nil {
-            return "", err
+            return err
         }
     }
 
-    return z.conn.Create(z.fullPath(path), marshaledData, flags, acl)
-}
-
-func (z *Zookeeper) Delete(path string, version int32) error {
-    return z.conn.Delete(z.fullPath(path), version)
+    return nil  
 }
 
 func (z *Zookeeper) getChildrenData(path string, children []string) (map[string]*ZNode, error) {
