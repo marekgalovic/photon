@@ -3,9 +3,9 @@ package services
 import (
     "golang.org/x/net/context";
 
-    "github.com/marekgalovic/photon/server";
-    "github.com/marekgalovic/photon/server/utils";
-    pb "github.com/marekgalovic/photon/server/protos"
+    "github.com/marekgalovic/photon/go/server";
+    "github.com/marekgalovic/photon/go/core/utils";
+    pb "github.com/marekgalovic/photon/go/core/protos"
 )
 
 type EvaluatorService struct {

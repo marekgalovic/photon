@@ -1,21 +1,28 @@
 package runner
 
+import (
+    "golang.org/x/net/context";
+
+    pb "github.com/marekgalovic/photon/go/core/protos";
+
+    log "github.com/Sirupsen/logrus"
+)
+
 type Evaluator struct {
-    
+    modelManager *ModelManager
 }
 
-func NewEvaluator() *Evaluator {
-    return &Evaluator{}
+func NewEvaluator(modelManager *ModelManager) *Evaluator {
+    return &Evaluator{
+        modelManager: modelManager,
+    }
 }
 
-func (e *Evaluator) Evaluate(uid string, params map[string]interface{}) (map[string]interface{}, error) {
-    return nil, nil
-}
+func (e *Evaluator) Evaluate(ctx context.Context, req *pb.EvaluationRequest) (*pb.EvaluationResponse, error) {
+    log.Info(req)
 
-func (e *Evaluator) AddModel(uid, modelPath string) error {
-    return nil
-}
-
-func (e *Evaluator) RemoveModel(uid string) error {
-    return nil
+    return &pb.EvaluationResponse{
+        ModelUid: "x000",
+        VersionUid: "x001",
+    }, nil
 }

@@ -8,24 +8,16 @@ services:
     ports:
       - 3306:3306
   cassandra:
-    image: 'bitnami/cassandra:latest'
-    labels:
-      kompose.service.type: nodeport
-    ports:
-      - '7000:7000'
-      - '7001:7001'
-      - '9042:9042'
-      - '9160:9160'
+    image: cassandra:3.0.8
     volumes:
-      - 'cassandra_data:/bitnami'
+      - /var/lib/cassandra
+    ports:
+      - "7000:7000"
+      - "7001:7001"
+      - "7199:7199"
+      - "9042:9042"
+      - "9160:9160"
   zookeeper:
     image: zookeeper
-    restart: always
     ports:
         - 2181:2181
-    environment:
-        ZOO_MY_ID: 1
-
-volumes:
-  cassandra_data:
-    driver: local

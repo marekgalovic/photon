@@ -10,6 +10,8 @@ import (
 type CassandraConfig struct {
     Nodes []string
     Keyspace string
+    ProtoVersion int
+    Consistency string
     Username string
     Password string
 }
@@ -22,12 +24,22 @@ func NewCassandra(config CassandraConfig) (*Cassandra, error) {
     cluster := gocql.NewCluster(config.Nodes...)
     cluster.Timeout = 5 * time.Second
     cluster.Keyspace = config.Keyspace
-    cluster.Consistency = gocql.Quorum
-    cluster.Authenticator = gocql.PasswordAuthenticator{Username: config.Username, Password: config.Password}
+    cluster.ProtoVersion = config.ProtoVersion
+    switch config.Consistency {
+    case "one":
+        cluster.Consistency = gocql.One
+    case "quorum":
+        cluster.Consistency = gocql.Quorum
+    default:
+        cluster.Consistency = gocql.Quorum
+    }
+    if config.Username != "" {
+        cluster.Authenticator = gocql.PasswordAuthenticator{Username: config.Username, Password: config.Password}
+    }
 
     session, err := cluster.CreateSession()
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("Failed to connect to Cassandra. %v", err)
     }
     
     return &Cassandra{session}, nil

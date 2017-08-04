@@ -1,8 +1,11 @@
 package server
 
 import (
+    "golang.org/x/net/context";
+
     "github.com/marekgalovic/photon/go/core/balancer";
     "github.com/marekgalovic/photon/go/core/storage/repositories";
+    pb "github.com/marekgalovic/photon/go/core/protos";
 
     "google.golang.org/grpc";
     log "github.com/Sirupsen/logrus"
@@ -25,7 +28,7 @@ func NewEvaluator(modelResolver *ModelResolver, featuresResolver *FeaturesResolv
 }
 
 func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interface{}) (map[string]interface{}, error) {
-    model, version, err := e.modelResolver.GetModel(model_uid)
+    _, version, err := e.modelResolver.GetModel(model_uid)
     if err != nil {
         return nil, err
     }
@@ -35,15 +38,24 @@ func (e *Evaluator) Evaluate(model_uid string, requestParams map[string]interfac
         return nil, err
     }
 
-    log.Info(model)
-    log.Info(version)
-    log.Info(features)
+    return e.call(version.Uid, features)
+}
 
-    conn, err := grpc.Dial(version.Uid, grpc.WithInsecure(), grpc.WithBalancer(grpc.RoundRobin(e.instancesResolver)))
+func (e *Evaluator) call(versionUid string, features map[string]interface{}) (map[string]interface{}, error) {
+    conn, err := grpc.Dial(versionUid, grpc.WithInsecure(), grpc.WithBalancer(grpc.RoundRobin(e.instancesResolver)))
     if err != nil {
         return nil, err
     }
-    conn.Close()
-    
-    return features, nil
+    defer conn.Close()
+
+    client := pb.NewEvaluatorServiceClient(conn)
+
+    result, err := client.Evaluate(context.Background(), &pb.EvaluationRequest{})
+    if err != nil {
+        return nil, err
+    }
+
+    log.Info("gRPC result:", result)
+
+    return nil, nil
 }

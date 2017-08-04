@@ -16,7 +16,7 @@ import (
 )
 
 const (
-    migrationsPath = "/storage/migrations"
+    migrationsPath = "/db/migrations"
 )
 
 func main() {

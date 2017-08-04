@@ -7,4 +7,3 @@ build:
 
 test:
 	PHOTON_ENV=test go test -ldflags -s ./...
-

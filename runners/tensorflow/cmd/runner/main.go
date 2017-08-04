@@ -1,10 +1,14 @@
 package main
 
 import (
+    "net";
+
     "github.com/marekgalovic/photon/runners/tensorflow";
     "github.com/marekgalovic/photon/go/core/storage";
     "github.com/marekgalovic/photon/go/core/storage/repositories";
+    pb "github.com/marekgalovic/photon/go/core/protos";
 
+    "google.golang.org/grpc";
     log "github.com/Sirupsen/logrus"
 )
 
@@ -13,6 +17,12 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
+
+    listener, err := net.Listen("tcp", config.BindAddress())
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer listener.Close()
 
     zookeeper, err := storage.NewZookeeper(config.Zookeeper)
     if err != nil {
@@ -27,19 +37,11 @@ func main() {
         log.Fatal(err)
     }
     defer modelManager.Close()
+    go modelManager.Watch()
 
-    modelManager.Watch()
+    grpcServer := grpc.NewServer()
+    pb.RegisterEvaluatorServiceServer(grpcServer, runner.NewEvaluator(modelManager))
 
-    // log.Info("Running...")
-    // for {
-    //     uid, err := instancesRepository.Register("model_version_uid_a", config.Address, config.Port)
-    //     if err != nil {
-    //         log.Fatal(err)
-    //     }
-    //     time.Sleep(1 * time.Second)
-    //     if err = instancesRepository.Unregister("model_version_uid_a", uid); err != nil {
-    //         log.Fatal(err)
-    //     }
-    //     time.Sleep(1 * time.Second)
-    // }
+    log.Infof("Listening: %s", config.BindAddress())
+    grpcServer.Serve(listener)
 }

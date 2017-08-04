@@ -26,11 +26,11 @@ type Mysql struct {
 func NewMysql(config MysqlConfig) (*Mysql, error) {
     conn, err := sql.Open("mysql", config.ConnectionUrl())
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("Failed to connect to MySQL. %v", err)
     }
 
     if err = conn.Ping(); err != nil {
-        return nil, err
+        return nil, fmt.Errorf("Failed to connect to MySQL. %v", err)
     }
 
     return &Mysql{conn}, nil

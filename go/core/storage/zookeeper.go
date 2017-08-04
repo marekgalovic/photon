@@ -1,12 +1,14 @@
 package storage
 
 import (
+    "fmt";
     "time";
     "strings";
     "path/filepath";
     "encoding/json";
 
     "github.com/samuel/go-zookeeper/zk";
+    log "github.com/Sirupsen/logrus"
 )
 
 type ZookeeperConfig struct {
@@ -33,8 +35,9 @@ type Zookeeper struct {
 func NewZookeeper(config ZookeeperConfig) (*Zookeeper, error) {
     conn, _, err := zk.Connect(config.Nodes, config.SessionTimeout)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("Failed to connect to Zookeeper. %v", err)
     }
+    conn.SetLogger(log.New())
 
     return &Zookeeper{
         conn: conn,

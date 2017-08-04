@@ -34,13 +34,12 @@ func NewConfig() (*Config, error) {
             User: "root",
             Host: "127.0.0.1",
             Port: 3306,
-            Database: "serving_development",
+            Database: "photon",
         },
         Cassandra: storage.CassandraConfig{
             Nodes: []string{"127.0.0.1"},
-            Keyspace: "development",
-            Username: "cassandra",
-            Password: "cassandra",
+            Keyspace: "photon",
+            Consistency: "quorum",
         },
         Zookeeper: storage.ZookeeperConfig{
             Nodes: []string{"127.0.0.1:2181"},
@@ -88,6 +87,8 @@ func (c *Config) parseFlags() {
     // Cassandra
     c.Cassandra.Nodes = strings.Split(*flag.String("cassandra-nodes", strings.Join(c.Cassandra.Nodes, ","), "Cassandra nodes (comma delimited)."), ",")
     flag.StringVar(&c.Cassandra.Keyspace, "cassandra-keyspace", c.Cassandra.Keyspace, "Cassandra keyspace.")
+    flag.IntVar(&c.Cassandra.ProtoVersion, "cassandra-proto-version", c.Cassandra.ProtoVersion, "Cassandra protocol version.")
+    flag.StringVar(&c.Cassandra.Consistency, "cassandra-consistency", c.Cassandra.Consistency, "Cassandra consistency (one, quorum).")
     flag.StringVar(&c.Cassandra.Username, "cassandra-user", c.Cassandra.Username, "Cassandra user.")
     if c.Cassandra.Password == "" {
         flag.StringVar(&c.Cassandra.Password, "cassandra-password", "", "Cassandra password.")

@@ -75,6 +75,10 @@ func (c *Config) validate() error {
     return nil
 }
 
+func (c *Config) BindAddress() string {
+    return fmt.Sprintf("%s:%d", c.Address, c.Port)
+}
+
 func (c *Config) NodeIp() (string, error) {
     interfaces, err := net.Interfaces()
     if err != nil {
