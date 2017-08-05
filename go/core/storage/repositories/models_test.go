@@ -47,7 +47,7 @@ func (test *ModelsRepositoryTest) seedDatabase() {
 
     _, err = test.db.Exec(
         `INSERT INTO model_version_request_features (model_version_uid, name, alias, required) VALUES (?,?,?,?),(?,?,?,?)`,
-        "test-version-uid", "x1", nil, true,
+        "test-version-uid", "x1", "x1", true,
         "test-version-uid", "x2", "x2_alias", false,
     )
     test.Require().Nil(err)
@@ -57,7 +57,7 @@ func (test *ModelsRepositoryTest) seedDatabase() {
 
     _, err = test.db.Exec(
         `INSERT INTO model_version_precomputed_features (model_version_uid, feature_set_uid, name, alias, required) VALUES (?,?,?,?,?),(?,?,?,?,?)`,
-        "test-version-uid", "test-feature-set-uid", "x3", nil, true,
+        "test-version-uid", "test-feature-set-uid", "x3", "x3_alias", true,
         "test-version-uid", "test-feature-set-uid", "x4", "x4_alias", false,
     )
     test.Require().Nil(err)

@@ -8,11 +8,11 @@ import (
     "github.com/marekgalovic/photon/go/core/balancer";
     "github.com/marekgalovic/photon/go/core/storage/repositories";
     "github.com/marekgalovic/photon/go/core/metrics";
+    "github.com/marekgalovic/photon/go/core/utils";
     pb "github.com/marekgalovic/photon/go/core/protos";
 
     "google.golang.org/grpc";
     "github.com/patrickmn/go-cache";
-    log "github.com/Sirupsen/logrus"
 )
 
 type Evaluator struct {
@@ -69,13 +69,20 @@ func (e *Evaluator) call(versionUid string, features map[string]interface{}) (ma
         return nil, err
     }
 
-    result, err := client.Evaluate(context.Background(), &pb.RunnerEvaluateRequest{})
+    featuresPb, err := utils.InterfaceMapToValueInterfacePb(features)
     if err != nil {
         return nil, err
     }
 
-    log.Info("Runner result: ", result)
-    return nil, nil
+    result, err := client.Evaluate(context.Background(), &pb.RunnerEvaluateRequest{
+        VersionUid: versionUid,
+        Features: featuresPb,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    return utils.ValueInterfacePbToInterfaceMap(result.Result)
 }
  
 func (e *Evaluator) getClient(versionUid string) (pb.RunnerServiceClient, error) {
