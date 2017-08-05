@@ -31,13 +31,11 @@ func main() {
     defer zookeeper.Close()
 
     instancesRepository := repositories.NewInstancesRepository(zookeeper)
-
     modelManager, err := runner.NewModelManager(config, instancesRepository)
     if err != nil {
         log.Fatal(err)
     }
     defer modelManager.Close()
-    go modelManager.Watch()
 
     grpcServer := grpc.NewServer()
     pb.RegisterRunnerServiceServer(grpcServer, runner.NewRunner(modelManager))

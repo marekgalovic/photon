@@ -1,7 +1,9 @@
 package runner
 
 import (
+    "os";
     "fmt";
+    "io/ioutil";
     "path/filepath";
 
     "github.com/marekgalovic/photon/go/core/storage/repositories";
@@ -24,13 +26,23 @@ func NewModelManager(config *Config, instancesRepository *repositories.Instances
         return nil, err
     }
 
-    return &ModelManager{
+    manager := &ModelManager{
         config: config,
         instancesRepository: instancesRepository,
         watcher: watcher,
         zookeeperUids: make(map[string]string),
         stopper: make(chan struct{}),
-    }, nil
+    }
+
+    if err := manager.load(); err != nil {
+        return nil, err
+    }
+
+    if err := manager.watch(); err != nil {
+        return nil, err
+    }
+
+    return manager, nil
 }
 
 func (m *ModelManager) Close() {
@@ -42,37 +54,65 @@ func (m *ModelManager) Get(versionUid string) {
 
 }
 
-func (m *ModelManager) Watch() error {
+func (m *ModelManager) load() error {
+    info, err := os.Stat(m.config.ModelsDir); 
+    if err != nil {
+        return err
+    }
+
+    if !info.IsDir() {
+        return fmt.Errorf("%s is not a directory.", m.config.ModelsDir)
+    }
+
+    files, err := ioutil.ReadDir(m.config.ModelsDir)
+    if err != nil {
+        return err
+    }
+
+    for _, file := range files {
+        if err = m.create(file.Name()); err != nil {
+            return err
+        }
+        log.Infof("Loaded model: %s", file.Name())
+    }
+
+    return nil
+}
+
+func (m *ModelManager) watch() error {
     if err := m.watcher.Add(m.config.ModelsDir); err != nil {
         return err
     }
 
-    for {
-        select {
-        case <- m.stopper:
-            return nil
-        case event := <- m.watcher.Events:
-            fileName := filepath.Base(event.Name)
-
-            switch {
-            case event.Op & fsnotify.Create == fsnotify.Create:
-                if err := m.create(fileName); err != nil {
-                    log.Errorf("Failed to create model. %v", err)
+    go func() {
+        for {
+            select {
+            case <- m.stopper:
+                return
+            case event := <- m.watcher.Events:
+                switch {
+                case event.Op & fsnotify.Create == fsnotify.Create:
+                    if err := m.create(event.Name); err != nil {
+                        log.Errorf("Failed to create model. %v", err)
+                    }
+                    log.Infof("Created model: %s", event.Name)
+                case event.Op & fsnotify.Remove == fsnotify.Remove:
+                    if err := m.remove(event.Name); err != nil {
+                        log.Errorf("Failed to remove model. %v", err)
+                    }
+                    log.Infof("Removed model: %s", event.Name)
                 }
-                log.Infof("Created model: %s", fileName)
-            case event.Op & fsnotify.Remove == fsnotify.Remove:
-                if err := m.remove(fileName); err != nil {
-                    log.Errorf("Failed to remove model. %v", err)
-                }
-                log.Infof("Removed model: %s", fileName)
+            case err := <- m.watcher.Errors:
+                log.Error(err)
             }
-        case err := <- m.watcher.Errors:
-            log.Error(err)
         }
-    }
+    }()
+
+    return nil
 }
 
-func (m *ModelManager) create(fileName string) error {
+func (m *ModelManager) create(path string) error {
+    fileName := filepath.Base(path)
     uid, err := m.instancesRepository.Register(fileName, m.config.Address, m.config.Port)
     if err != nil {
         return err
@@ -82,7 +122,8 @@ func (m *ModelManager) create(fileName string) error {
     return nil
 }
 
-func (m *ModelManager) remove(fileName string) error {
+func (m *ModelManager) remove(path string) error {
+    fileName := filepath.Base(path)
     uid, exists := m.zookeeperUids[fileName]
     if !exists {
         return fmt.Errorf("Unknown model uid: %s", fileName)
