@@ -6,14 +6,13 @@ import (
     "flag";
     "time";
     "strings";
-    "net";
 
+    "github.com/marekgalovic/photon/go/core/utils";
     "github.com/marekgalovic/photon/go/core/storage"
 )
 
 type Config struct {
     Env string
-    ModelUid string
     ModelsDir string
     Address string
     Port int
@@ -29,9 +28,8 @@ func getEnvDefault(key string, defaultValue string) string {
 
 func NewConfig() (*Config, error) {
     config := &Config{
-        Env: getEnvDefault("PHOTON_ENV", "development"),
-        ModelUid: getEnvDefault("PHOTON_MODEL_UID", ""),
-        ModelsDir: getEnvDefault("PHOTON_MODELS_DIR", "./"),
+        Env: utils.GetEnv("PHOTON_ENV", "development"),
+        ModelsDir: utils.GetEnv("PHOTON_MODELS_DIR", "./"),
         Port: 5022,
         Zookeeper: storage.ZookeeperConfig{
             Nodes: []string{"127.0.0.1:2181"},
@@ -40,22 +38,18 @@ func NewConfig() (*Config, error) {
         },
     }
 
-    nodeIp, err := config.NodeIp()
+    nodeIp, err := utils.NodeIp()
     if err != nil {
         return nil, err
     }
     config.Address = nodeIp
-
-    if err := config.parseFlags(); err != nil {
-        return nil, err
-    }
+    config.parseFlags()
 
     return config, nil
 }
 
-func (c *Config) parseFlags() error {
+func (c *Config) parseFlags() {
     flag.StringVar(&c.Env, "env", c.Env, "Server environment.")
-    flag.StringVar(&c.ModelUid, "model-uid", c.ModelUid, "Model uid.")
     flag.StringVar(&c.ModelsDir, "models-dir", c.ModelsDir, "Models directory.")
     // Listener
     flag.StringVar(&c.Address, "address", c.Address, "Server address.")
@@ -65,57 +59,8 @@ func (c *Config) parseFlags() error {
     flag.StringVar(&c.Zookeeper.BasePath, "zookeeper-basepath", c.Zookeeper.BasePath, "Zookeeper base path.")
 
     flag.Parse()
-    return c.validate()
-}
-
-func (c *Config) validate() error {
-    // if c.ModelUid == "" {
-    //     return fmt.Errorf("No model uid provided.")
-    // }
-    return nil
 }
 
 func (c *Config) BindAddress() string {
     return fmt.Sprintf("%s:%d", c.Address, c.Port)
-}
-
-func (c *Config) NodeIp() (string, error) {
-    interfaces, err := net.Interfaces()
-    if err != nil {
-        return "", err
-    }
-    for _, iface := range interfaces {
-        if iface.Flags & net.FlagUp == 0 {
-            continue
-        }
-        if iface.Flags & net.FlagLoopback != 0 {
-            continue
-        }
-
-        addrs, err := iface.Addrs()
-        if err != nil {
-            return "", err
-        }
-
-        for _, addr := range addrs {
-            var ip net.IP
-            switch v := addr.(type) {
-                case *net.IPNet:
-                    ip = v.IP
-                case *net.IPAddr:
-                    ip = v.IP
-            }
-
-            if ip == nil || ip.IsLoopback() {
-                continue
-            }
-            ip = ip.To4()
-            if ip == nil {
-                continue
-            }
-
-            return ip.String(), nil
-        }
-    }
-    return "", fmt.Errorf("Unable to find node IP.")
 }

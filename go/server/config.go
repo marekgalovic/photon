@@ -1,13 +1,13 @@
 package server
 
 import (
-    "os";
     "fmt";
     "flag";
     "time";
     "strings";
     "path/filepath";
 
+    "github.com/marekgalovic/photon/go/core/utils";
     "github.com/marekgalovic/photon/go/core/storage";
 
     "github.com/BurntSushi/toml";
@@ -28,8 +28,8 @@ type Config struct {
 func NewConfig() (*Config, error) {
     config := &Config{
         Port: 5005,
-        Root: "./",
-        Env: "development",
+        Env: utils.GetEnv("PHOTON_ENV", "development"),
+        Root: utils.GetEnv("PHOTON_ROOT", "./"),
         Mysql: storage.MysqlConfig{
             User: "root",
             Host: "127.0.0.1",
@@ -56,9 +56,7 @@ func NewConfig() (*Config, error) {
 }
 
 func (c *Config) parse() error {
-    c.Env = c.getEnvDefault("PHOTON_ENV", c.Env)
-    c.Root = c.getEnvDefault("PHOTON_ROOT", c.Root)
-    c.ConfigPath = c.getEnvDefault("PHOTON_CONF", filepath.Join(c.Root, "config", fmt.Sprintf("%s.tml", c.Env)))
+    c.ConfigPath = utils.GetEnv("PHOTON_CONF", filepath.Join(c.Root, "config", fmt.Sprintf("%s.tml", c.Env)))
 
     _, err := toml.DecodeFile(c.ConfigPath, &c)
     if err != nil {
@@ -98,13 +96,6 @@ func (c *Config) parseFlags() {
     flag.StringVar(&c.Zookeeper.BasePath, "zookeeper-basepath", c.Zookeeper.BasePath, "Zookeeper base path.")
 
     flag.Parse()
-}
-
-func (c *Config) getEnvDefault(key string, defaultValue string) string {
-    if envValue, exists := os.LookupEnv(key); exists {
-        return envValue
-    }
-    return defaultValue
 }
 
 func (c *Config) Print() {
