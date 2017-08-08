@@ -121,20 +121,20 @@ func (z *Zookeeper) Create(path string, data interface{}, flags int32, acl []zk.
         return "", err
     }
 
-    if err = z.ensurePath(path); err != nil {
+    if err = z.EnsurePath(path); err != nil {
         return "", err
     }
 
     return z.conn.Create(z.fullPath(path), marshaledData, flags, acl)
 }
 
-func (z *Zookeeper) CreateEphemeral(path string, data interface{}, acl []zk.ACL) (string, error) {
+func (z *Zookeeper) CreateEphemeralSequential(path string, data interface{}, acl []zk.ACL) (string, error) {
     marshaledData, err := json.Marshal(data)
     if err != nil {
         return "", err
     } 
 
-    if err = z.ensurePath(path); err != nil {
+    if err = z.EnsurePath(path); err != nil {
         return "", err
     }
 
@@ -145,7 +145,7 @@ func (z *Zookeeper) Delete(path string, version int32) error {
     return z.conn.Delete(z.fullPath(path), version)
 }
 
-func (z *Zookeeper) ensurePath(path string) error {
+func (z *Zookeeper) EnsurePath(path string) error {
     pathParts := strings.Split(z.fullPath(path), "/")
 
     for i, _ := range pathParts {

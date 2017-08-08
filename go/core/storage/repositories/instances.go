@@ -40,7 +40,7 @@ func (r *InstancesRepository) List(versionUid string) (map[string]*Instance, err
 func (r *InstancesRepository) Register(versionUid, address string, port int) (string, error) {
     name := filepath.Join(r.instancesPath(versionUid), fmt.Sprintf("%s", uuid.NewV4()))
 
-    fullPath, err := r.zk.CreateEphemeral(name, &Instance{Address: address, Port: port}, zk.WorldACL(zk.PermRead))
+    fullPath, err := r.zk.CreateEphemeralSequential(name, &Instance{Address: address, Port: port}, zk.WorldACL(zk.PermRead))
     if err != nil {
         return "", err
     }

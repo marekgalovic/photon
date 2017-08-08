@@ -42,12 +42,11 @@ func (r *DeployersRepository) ListInstances(runnerType string) ([]*DeployerInsta
         }
         instances[i] = instance
     }
-    
     return instances, nil
 }
 
 func (r *DeployersRepository) RegisterInstance(runnerType string) (*DeployerInstance, error) {
-    fullPath, err := r.zk.CreateEphemeral(filepath.Join(r.instancesPath(runnerType), "d-"), nil, zk.WorldACL(zk.PermAll))
+    fullPath, err := r.zk.CreateEphemeralSequential(filepath.Join(r.instancesPath(runnerType), "d-"), nil, zk.WorldACL(zk.PermAll))
     if err != nil {
         return nil, err
     }
@@ -57,10 +56,42 @@ func (r *DeployersRepository) RegisterInstance(runnerType string) (*DeployerInst
 
 func (r *DeployersRepository) WatchInstance(runnerType string, uid string) (<-chan zk.Event, error) {
     return r.zk.Watch(filepath.Join(r.instancesPath(runnerType), uid))
-} 
+}
+
+func (r *DeployersRepository) ListModels(runnerType string) (map[string]int, <-chan zk.Event, error) {
+    children, event, err := r.zk.ChildrenDataW(r.modelsPath(runnerType))
+    if err != nil {
+        return nil, nil, err
+    }
+
+    models := make(map[string]int)
+    for _, child := range children {
+        var config map[string]int
+        if err := child.Scan(&config); err != nil {
+            return nil, nil, err
+        }
+        models[child.Name] = config["instances"]
+    }
+
+    return models, event, nil
+}
+
+func (r *DeployersRepository) DeployModel(runnerType, modelUid string, instancesCount int) error {
+    _, err := r.zk.Create(filepath.Join(r.modelsPath(runnerType), modelUid), map[string]int{"instances": instancesCount}, int32(0), zk.WorldACL(zk.PermAll))
+
+    return err
+}
+
+func (r *DeployersRepository) UndeployModel(runnerType, modelUid string) error {
+    return r.zk.Delete(filepath.Join(r.modelsPath(runnerType), modelUid), -1)
+}
 
 func (r *DeployersRepository) instancesPath(runnerType string) string {
     return filepath.Join("deployers", runnerType, "instances")
+}
+
+func (r *DeployersRepository) modelsPath(runnerType string) string {
+    return filepath.Join("deployers", runnerType, "models")
 }
 
 func (r *DeployersRepository) childNameToDeployerInstance(name string) (*DeployerInstance, error) {
