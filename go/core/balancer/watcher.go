@@ -1,13 +1,13 @@
 package balancer
 
 import (
-    "github.com/marekgalovic/photon/go/core/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/repositories";
 
     "google.golang.org/grpc/naming";
 )
 
 type Watcher struct {
-    instancesRepository *repositories.InstancesRepository
+    instancesRepository repositories.InstancesRepository
     modelVersionUid string
     instances map[string]*repositories.Instance
     updates chan map[string]*repositories.Instance
@@ -15,7 +15,7 @@ type Watcher struct {
     stopper chan struct{}
 }
 
-func NewWatcher(instancesRepository *repositories.InstancesRepository, modelVersionUid string) *Watcher {
+func NewWatcher(instancesRepository repositories.InstancesRepository, modelVersionUid string) *Watcher {
     watcher := &Watcher {
         instancesRepository: instancesRepository,
         modelVersionUid: modelVersionUid,
@@ -71,17 +71,17 @@ func (w *Watcher) watchUpdates() {
 func (w *Watcher) generateUpdates(updatedInstances map[string]*repositories.Instance) []*naming.Update {
     updates := make([]*naming.Update, 0)
 
-    for _, instance := range w.instances {
-        if _, exists := updatedInstances[instance.Uid]; !exists {
+    for uid, instance := range w.instances {
+        if _, exists := updatedInstances[uid]; !exists {
             updates = append(updates, &naming.Update{Op: naming.Delete, Addr: instance.FullAddress()})
-            delete(w.instances, instance.Uid)
+            delete(w.instances, uid)
         }
     }
 
-    for _, instance := range updatedInstances {
-        if _, exists := w.instances[instance.Uid]; !exists {
+    for uid, instance := range updatedInstances {
+        if _, exists := w.instances[uid]; !exists {
             updates = append(updates, &naming.Update{Op: naming.Add, Addr: instance.FullAddress()})
-            w.instances[instance.Uid] = instance
+            w.instances[uid] = instance
         }
     }
 

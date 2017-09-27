@@ -1,0 +1,29 @@
+#!/bin/bash
+
+bootstrap_mysql() {
+    until (mysql -h 127.0.0.1 -P 3306 -u root -e "SELECT 1" &> /dev/null)
+    do
+      echo "Waiting for MySQL..."
+      sleep 1
+    done
+
+    if mysql -h 127.0.0.1 -P 3306 -u root < script/bootstrap-mysql.sql
+    then
+      echo "Bootstrapping MySQL is done."
+    fi
+}
+
+bootstrap_cassandra() {
+    until (docker run -it --network host cassandra:latest cqlsh -e "SHOW VERSION" &> /dev/null)
+    do
+        echo "Waiting for Cassandra..."
+        sleep 1
+    done
+    if docker run -it --network host cassandra:latest cqlsh -e "$(cat script/bootstrap-cassandra.cql)"
+    then
+      echo "Bootstrapping Cassandra is done."
+    fi 
+}
+
+bootstrap_mysql "$@"
+bootstrap_cassandra "$@"

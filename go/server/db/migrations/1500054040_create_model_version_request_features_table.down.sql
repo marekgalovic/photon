@@ -1,1 +1,0 @@
-DROP TABLE model_version_request_features;

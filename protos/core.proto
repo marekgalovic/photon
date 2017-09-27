@@ -33,4 +33,13 @@ message ListFloat64 {
     repeated double value = 1;
 }
 
+message EmptyRequest {}
+
 message EmptyResponse {}
+
+message DataBlob {
+    oneof part {
+        string name = 1;
+        bytes data  = 2;
+    }
+}

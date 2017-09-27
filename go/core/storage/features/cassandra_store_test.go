@@ -11,7 +11,7 @@ import (
 type CassandraFeaturesStoreTest struct {
     suite.Suite
     db *storage.Cassandra
-    store *CassandraFeaturesStore
+    store *cassandraFeaturesStore
 }
 
 func TestCassandraFeaturesStore(t *testing.T) {
@@ -32,21 +32,21 @@ func (test *CassandraFeaturesStoreTest) SetupTest() {
 }
 
 func (test *CassandraFeaturesStoreTest) seedDatabase() {
-    err := test.db.Query(`DROP TABLE IF EXISTS set_test_features_uid`).Exec();
+    err := test.db.Query(`DROP TABLE IF EXISTS feature_set_1`).Exec();
     test.Require().Nil(err)
 
-    err = test.db.Query(`DROP TABLE IF EXISTS set_test_features_uid2`).Exec();
+    err = test.db.Query(`DROP TABLE IF EXISTS feature_set_2`).Exec();
     test.Require().Nil(err)
 
-    err = test.db.Query(`CREATE TABLE set_test_features_uid (schema_uid VARCHAR, key_a VARCHAR, key_b VARCHAR, data TEXT, PRIMARY KEY (key_a, key_b))`).Exec()
+    err = test.db.Query(`CREATE TABLE feature_set_1 (key_a VARCHAR, key_b VARCHAR, data TEXT, PRIMARY KEY (key_a, key_b))`).Exec()
     test.Require().Nil(err)
 
-    err = test.db.Query(`INSERT INTO set_test_features_uid (schema_uid, key_a, key_b, data) VALUES ('test-schema-uid', '1', 'foo@bar.com', '{"x1": "foo", "x2": 1, "x3": 2.5}')`).Exec()
+    err = test.db.Query(`INSERT INTO feature_set_1 (key_a, key_b, data) VALUES ('1', 'foo@bar.com', '{"x1": "foo", "x2": 1, "x3": 2.5}')`).Exec()
     test.Require().Nil(err)
 }
  
 func (test *CassandraFeaturesStoreTest) TestGet() {
-    features, err := test.store.Get("test-features-uid", []string{"key_a", "key_b"}, map[string]interface{}{"key_a": 1, "key_b": "foo@bar.com"})
+    features, err := test.store.Get(1, []string{"key_a", "key_b"}, map[string]interface{}{"key_a": 1, "key_b": "foo@bar.com"})
     test.Require().Nil(err)
 
     test.Require().NotNil(features)
@@ -56,23 +56,23 @@ func (test *CassandraFeaturesStoreTest) TestGet() {
 }
 
 func (test *CassandraFeaturesStoreTest) TestInsert() {
-    storage.AssertCountChanged(test.db, "set_test_features_uid", 1, func() {
+    storage.AssertCountChanged(test.db, "feature_set_1", 1, func() {
         err := test.store.Insert(
-            "test-features-uid", "3e53a72b-70ba-4255-8d89-f96de7c1c6b9", []string{"key_a", "key_b"},
+            1, []string{"key_a", "key_b"},
             map[string]interface{}{"key_a": 2, "key_b": "foo@baz.com", "x1": "baz", "x2": 2, "x3": 2.6},
         )
-        test.Nil(err)
+        test.Require().Nil(err)
     })
 }
 
 func (test *CassandraFeaturesStoreTest) TestCreateFeatureSet() {
-    err := test.store.CreateFeatureSet("test-features-uid2", []string{"key_c"})
+    err := test.store.CreateFeatureSet(2, []string{"key_c"})
 
     test.Nil(err)
 }
 
 func (test *CassandraFeaturesStoreTest) TestDeleteFeatureSet() {
-    err := test.store.DeleteFeatureSet("test-features-uid")
+    err := test.store.DeleteFeatureSet(1)
 
     test.Nil(err)
 }

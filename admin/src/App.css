@@ -1,0 +1,129 @@
+.sidebar {
+  display: block;
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  z-index: 1000;
+  box-shadow: 20px 0px 80px rgba(0,0,0,.05);
+  padding-left: 0px;
+  padding-right: 0px;
+  background-color: #FCFCFD;
+}
+
+.sidebar h1 {
+  font-size: 24px;
+  line-height: 34px;
+  font-weight: 600;
+  text-align: center;
+  margin: 13px 0px;
+  color: #132a3a;
+}
+
+.sidebar .nav-sidebar li a {
+  padding: 20px 25px;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 20px;
+  color: #132a3a;
+  background: transparent;
+}
+
+.sidebar .nav-sidebar li a span.fa {
+  vertical-align: middle;
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.sidebar .nav-sidebar li a:hover, .sidebar .nav-sidebar li a.active {
+  border-left: 3px solid #4BA8E6;
+  padding-left: 22px;
+}
+
+.sidebar .nav-sidebar li a:hover span.fa, .sidebar .nav-sidebar li a.active span.fa {
+  color: #4BA8E6;
+}
+
+.top-nav {
+  position: fixed;
+  z-index: 990;
+  height: 60px;
+  background-color: #3C404B;
+  padding: 0 20px;
+}
+
+.top-nav .sidebar-toggle {
+  color: #fff;
+  font-size: 26px;
+  line-height: 30px;
+  padding: 15px 0;
+  vertical-align: middle;
+}
+
+.top-nav .nav {
+  padding: 20px 0;
+}
+
+.top-nav .nav li {
+  display: inline-table;
+  padding: 0 5px;
+  line-height: 20px;
+  color: #fff;
+}
+
+.top-nav .nav li:last-child {
+  padding-right: 0px;
+}
+
+.top-nav .nav li span {
+  font-size: 14px;
+  font-weight: 200;
+}
+
+.top-nav .nav li .fa {
+  font-size: 20px;
+  vertical-align: middle;
+  color: #911710;
+}
+
+.main {
+  z-index: 980;
+  margin-top: 90px;
+  margin-bottom: 20px;
+}
+
+h2.page-title {
+  font-size: 26px;
+  margin: 0px;
+  color: #132a3a;
+  font-weight: 600;
+}
+
+.col.content-box-wrapper {
+  padding: 0 7.5px;
+  margin-bottom: 15px;
+}
+
+.content-box {
+  padding: 15px;
+  background-color: #fff;
+  box-shadow: 0px 2px 3px rgba(0,0,0,.08);
+  border-radius: 2px;
+  background: #fff;
+}
+
+.content-box h3.content-box-title {
+  margin: 0px 0px 15px 0px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #132a3a;
+}
+
+.content-box .content-box-body {
+
+}
+
+table .actions .btn {
+  margin-left: 5px;
+}

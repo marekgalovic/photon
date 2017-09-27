@@ -1,0 +1,7 @@
+CREATE TABLE credentials(
+    `_key` VARCHAR(50) PRIMARY KEY,
+    `_secret` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(30) NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -11,7 +11,6 @@ type CassandraConfig struct {
     Nodes []string
     Keyspace string
     ProtoVersion int
-    Consistency string
     Username string
     Password string
 }
@@ -25,14 +24,7 @@ func NewCassandra(config CassandraConfig) (*Cassandra, error) {
     cluster.Timeout = 5 * time.Second
     cluster.Keyspace = config.Keyspace
     cluster.ProtoVersion = config.ProtoVersion
-    switch config.Consistency {
-    case "one":
-        cluster.Consistency = gocql.One
-    case "quorum":
-        cluster.Consistency = gocql.Quorum
-    default:
-        cluster.Consistency = gocql.Quorum
-    }
+    cluster.Consistency = gocql.Quorum
     if config.Username != "" {
         cluster.Authenticator = gocql.PasswordAuthenticator{Username: config.Username, Password: config.Password}
     }

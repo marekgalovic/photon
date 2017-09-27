@@ -1,27 +1,45 @@
 package com.marekgalovic.photon_pmml_runner
 
-import java.io.File
+import io.grpc.{Server, ServerBuilder}
+import photon.runner.RunnerServiceGrpc
+import scala.concurrent.ExecutionContext
+
+import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.curator.retry.ExponentialBackoffRetry
 
 object Main {
-  private val evaluator = new Evaluator
-
   def main(args: Array[String]) {
-    val conf = new Config(args)
+    val config = new Config(args)
+    val zookeeper = getZookeeperClient(config)
+    val modelManager = new ModelManager(config, zookeeper)
+    modelManager.load
 
-    println(conf.modelsDir)
-    println(conf.nodeIp)
+    val server = ServerBuilder.forPort(config.port())
+      .addService(RunnerServiceGrpc.bindService(new RunnerService(modelManager), ExecutionContext.global))
+      .build
+      .start
 
-    modelFiles(conf.modelsDir).foreach { println }
+    println("Models dir: "+config.modelsDir())
+    println("gRPC server listening on: "+config.port())
+
+    sys.addShutdownHook {
+      zookeeper.close
+      server.shutdown
+    }
+    
+    server.awaitTermination
   }
 
-  private def modelFiles(dir: String): List[File] = {
-    val d = new File(dir)
-    if (!d.exists) {
-      throw new Exception("Models dir does not exists")
-    }
-    if (!d.isDirectory) {
-      throw new Exception("Models dir is not a directory")
-    }
-    return d.listFiles.filter(f => f.isFile && f.getName.endsWith("xml")).toList 
+  private def getZookeeperClient(config: Config): CuratorFramework = {
+    val client = CuratorFrameworkFactory.builder
+      .connectString(config.zookeeperNodes())
+      .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+      .namespace(config.zookeeperBasepath())
+      .build
+
+    client.start
+    client.getZookeeperClient.blockUntilConnectedOrTimedOut
+
+    client
   }
 }

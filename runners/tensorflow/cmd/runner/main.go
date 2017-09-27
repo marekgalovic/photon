@@ -5,7 +5,7 @@ import (
 
     "github.com/marekgalovic/photon/runners/tensorflow";
     "github.com/marekgalovic/photon/go/core/storage";
-    "github.com/marekgalovic/photon/go/core/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/repositories";
     pb "github.com/marekgalovic/photon/go/core/protos";
 
     "google.golang.org/grpc";

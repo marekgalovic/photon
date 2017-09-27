@@ -1,5 +1,5 @@
 # Photon
-ML model serving service.
+Photon is a machine learning model runner build on top of kubernetes.
 
 ## Features
 - Serving different model kinds (pmml, tensorfow, ...)

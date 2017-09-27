@@ -13,8 +13,9 @@ type GoogleCloudStorageConfig struct {
 }
 
 type GoogleCloudStorage struct {
-    ctx *context.Context
+    ctx context.Context
     client *storage.Client
+    bucket *storage.BucketHandle
 }
 
 func NewGoogleCloudStorage(config GoogleCloudStorageConfig) (*GoogleCloudStorage, error) {
@@ -27,7 +28,7 @@ func NewGoogleCloudStorage(config GoogleCloudStorageConfig) (*GoogleCloudStorage
     return &GoogleCloudStorage{
         ctx: ctx,
         client: client,
-        bucket: client.Bucket(config.Bucket)
+        bucket: client.Bucket(config.Bucket),
     }, nil
 }
 
@@ -37,11 +38,14 @@ func (gcs *GoogleCloudStorage) Close() error {
 
 func (gcs *GoogleCloudStorage) Reader(path string) (io.ReadCloser, error) {
     return gcs.bucket.Object(path).NewReader(gcs.ctx)
-
 }
 
-func (gcs *GoogleCloudStorage) Writer(path string) io.WriteCloser {
-    return gcs.bucket.Object(path).NewWriter(gcs.ctx)
+func (gcs *GoogleCloudStorage) Writer(path string) (io.WriteCloser, error) {
+    return gcs.bucket.Object(path).NewWriter(gcs.ctx), nil
+}
+
+func (gcs *GoogleCloudStorage) Delete(path string) error {
+    return gcs.bucket.Object(path).Delete(gcs.ctx)
 }
 
 func (gcs *GoogleCloudStorage) ReadBytes(path string) ([]byte, error) {
@@ -55,7 +59,7 @@ func (gcs *GoogleCloudStorage) ReadBytes(path string) ([]byte, error) {
 }
 
 func (gcs *GoogleCloudStorage) WriteBytes(path string, data []byte) error {
-    writer := gcs.Writer(path)
+    writer, _ := gcs.Writer(path)
     writer.Write(data)
 
     return writer.Close()

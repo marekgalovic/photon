@@ -24,7 +24,7 @@ type ZNode struct {
 }
 
 func (n *ZNode) Scan(v interface{}) error {
-    return json.Unmarshal(n.Data, &v)
+    return json.Unmarshal(n.Data, v)
 }
 
 type Zookeeper struct {
@@ -53,6 +53,12 @@ func (z *Zookeeper) Exists(path string) (bool, error) {
     exists, _, err := z.conn.Exists(z.fullPath(path))
 
     return exists, err
+}
+
+func (z *Zookeeper) ExistsW(path string) (bool, <- chan zk.Event, error) {
+    exists, _, event, err := z.conn.ExistsW(z.fullPath(path))
+
+    return exists, event, err
 }
 
 func (z *Zookeeper) Watch(path string) (<-chan zk.Event, error) {
@@ -103,6 +109,19 @@ func (z *Zookeeper) Get(path string) (*ZNode, error) {
         FullPath: z.fullPath(path),
         Data: data,
     }, nil
+}
+
+func (z *Zookeeper) GetW(path string) (*ZNode, <-chan zk.Event, error) {
+    data, _, event, err := z.conn.GetW(z.fullPath(path))
+    if err != nil {
+        return nil, nil, err
+    }
+
+    return &ZNode {
+        Name: filepath.Base(path),
+        FullPath: z.fullPath(path),
+        Data: data,
+    }, event, nil
 }
 
 func (z *Zookeeper) Set(path string, data interface{}, version int32) error {

@@ -5,7 +5,7 @@ import (
     "testing";
 
     "github.com/marekgalovic/photon/go/core/storage";
-    "github.com/marekgalovic/photon/go/core/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/repositories";
 
     "github.com/stretchr/testify/suite";
     "github.com/samuel/go-zookeeper/zk";
@@ -14,7 +14,7 @@ import (
 type WatcherTest struct {
     suite.Suite
     zk *storage.Zookeeper
-    repository *repositories.InstancesRepository
+    repository repositories.InstancesRepository
     watcher *Watcher
     availableInstances map[string]*repositories.Instance
 }
@@ -44,9 +44,9 @@ func (test *WatcherTest) TearDownTest() {
 
 func (test *WatcherTest) seedZookeeper() {
     test.availableInstances = map[string]*repositories.Instance{
-        "instance_uid_a": &repositories.Instance{Uid: "instance_uid_a", Address: "127.0.0.1", Port: 5022},
-        "instance_uid_b": &repositories.Instance{Uid: "instance_uid_b", Address: "127.0.0.1", Port: 5023},
-        "instance_uid_c": &repositories.Instance{Uid: "instance_uid_c", Address: "127.0.0.1", Port: 5024},
+        "instance_uid_a": &repositories.Instance{Address: "127.0.0.1", Port: 5022},
+        "instance_uid_b": &repositories.Instance{Address: "127.0.0.1", Port: 5023},
+        "instance_uid_c": &repositories.Instance{Address: "127.0.0.1", Port: 5024},
     }
 
     _, err := test.zk.Create("/instances/model_version_uid/instance_uid_a", map[string]interface{}{"address": "127.0.0.1", "port": 5022}, int32(1), zk.WorldACL(zk.PermAll))

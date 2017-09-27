@@ -1,7 +1,7 @@
 syntax = "proto3";
 package photon;
 
-import "protos/core.proto";
+import "core.proto";
 
 service RunnerService {
     rpc Evaluate(RunnerEvaluateRequest) returns (RunnerEvaluateResponse);

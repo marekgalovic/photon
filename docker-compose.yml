@@ -8,9 +8,12 @@ services:
     ports:
       - 3306:3306
   cassandra:
-    image: cassandra:3.0.8
+    image: cassandra:latest
     volumes:
       - /var/lib/cassandra
+    environment:
+      CASSANDRA_START_RPC: 'true'
+      CASSANDRA_BROADCAST_ADDRESS: '127.0.0.1'
     ports:
       - "7000:7000"
       - "7001:7001"

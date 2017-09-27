@@ -1,14 +1,14 @@
 syntax = "proto3";
 package photon;
 
-import "protos/core.proto";
+import "core.proto";
 
 service EvaluatorService {
     rpc Evaluate(EvaluationRequest) returns (EvaluationResponse);
 }
 
 message EvaluationRequest {
-    string model_uid = 1;
+    string model_name = 1;
     map<string,ValueInterface> features = 2;
 }
 

@@ -1,44 +1,42 @@
 syntax = "proto3";
 package photon;
 
-import "protos/core.proto";
+import "core.proto";
 
 service ModelsService {
-    rpc List(ListModelsRequest) returns (stream Model);
+    // Models
+    rpc List(EmptyRequest) returns (stream Model);
     rpc Find(FindModelRequest) returns (Model);
-    rpc Create(CreateModelRequest) returns (Model);
+    rpc Create(CreateModelRequest) returns (CreateModelResponse);
     rpc Delete(DeleteModelRequest) returns (EmptyResponse);
 
     // Versions
     rpc ListVersions(ListVersionsRequest) returns (stream ModelVersion);
     rpc FindVersion(FindVersionRequest) returns (ModelVersion);
     rpc SetPrimaryVersion(SetPrimaryVersionRequest) returns (EmptyResponse);
-    rpc CreateVersion(CreateVersionRequest) returns (ModelVersion);
+    rpc CreateVersion(stream CreateVersionRequest) returns (stream CreateVersionResponse);
     rpc DeleteVersion(DeleteVersionRequest) returns (EmptyResponse);
 }
 
 message Model {
-    string uid                      = 1;
-    string name                     = 2;
-    string owner                    = 3;
-    int32 created_at                = 4;
-    int32 updated_at                = 5;
-}
-
-enum ModelType {
-    PMML = 0;
-    TENSORFLOW = 1;
-}
-
-message ModelVersion {
-    string uid                                  = 1;
+    int64 id                                    = 1;
     string name                                 = 2;
-    bool is_primary                             = 3;
-    bool is_shadow                              = 4;
-    repeated ModelFeature request_features      = 5;
+    string runner_type                          = 3;
+    int32 replicas                              = 4;
+    repeated ModelFeature features              = 5;
     repeated ModelFeature precomputed_features  = 6;
     int32 created_at                            = 7;
     int32 updated_at                            = 8;
+}
+
+message ModelVersion {
+    int64 id                                    = 1;
+    int64 model_id                              = 2;
+    string name                                 = 3;
+    string file_name                            = 4;
+    bool is_primary                             = 5;
+    bool is_shadow                              = 6;
+    int32 created_at                            = 7;
 }
 
 message ModelFeature {
@@ -46,47 +44,54 @@ message ModelFeature {
     bool required   = 2;
 }
 
-message ListModelsRequest {}
-
-message FindModelRequest {
-    string uid = 1;
-}
-
-message CreateModelRequest {
-    string name     = 1;
-    string owner    = 2;
-}
-
-message DeleteModelRequest {
-    string uid = 1;
-}
-
-message ListVersionsRequest {
-    string model_uid = 1;
-}
-
-message FindVersionRequest {
-    string uid = 1;
-}
-
-message SetPrimaryVersionRequest {
-    string model_uid    = 1;
-    string uid          = 2;
-}
-
-message CreateVersionRequest {
-    string model_uid                                            = 1;
-    string name                                                 = 2;
-    bool is_primary                                             = 3;
-    bool is_shadow                                              = 4;
-    repeated ModelFeature request_features                      = 5;
-    map<string,PrecomputedFeaturesSet> precomputed_features     = 6;
-}
-
 message PrecomputedFeaturesSet {
     repeated ModelFeature features = 1;
 }
 
+message FindModelRequest {
+    int64 id = 1;
+}
+
+message CreateModelRequest {
+    string name                                             = 1;
+    string runner_type                                      = 2;
+    int32 replicas                                          = 3;
+    repeated ModelFeature features                          = 4;
+    map<int64,PrecomputedFeaturesSet> precomputed_features  = 5;
+}
+
+message CreateModelResponse {
+    int64 id = 1;
+}
+
+message DeleteModelRequest {
+    int64 id = 1;
+}
+
+message ListVersionsRequest {
+    int64 model_id = 1;
+}
+
+message FindVersionRequest {
+    int64 id = 1;
+}
+
+message SetPrimaryVersionRequest {
+    int64 model_id    = 1;
+    int64 id          = 2;
+}
+
+message CreateVersionRequest {
+    oneof value {
+        ModelVersion version = 1;
+        bytes data           = 2;
+    }
+}
+
+message CreateVersionResponse {
+    int64 id = 1;
+}
+
 message DeleteVersionRequest {
-    string uid = 1;
+    int64 id = 1;
 }

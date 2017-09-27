@@ -2,30 +2,42 @@ package deployer
 
 import (
     "fmt";
-    "math";
-    // "time";
+    "time";
+    "io";
+    // "io/ioutil";
 
-    "github.com/marekgalovic/photon/go/core/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/storage";
+    "github.com/marekgalovic/photon/go/core/storage/files";
+    "github.com/marekgalovic/photon/go/core/repositories";
 
     log "github.com/Sirupsen/logrus"
 )
 
 type Deployer struct {
-    runnerType string
-    deployersRepository *repositories.DeployersRepository
-    zookeeperInstance *repositories.DeployerInstance
-    errorNotifier chan error
-    stopper chan bool
+    config *Config
+    deployerRepository repositories.DeployerRepository
+    modelsStore files.FilesStore
+    modelsDir files.FilesStore
     logger *log.Entry
+    versions map[int64]string
+    stopper chan struct{}
 }
 
-func NewDeployer(runnerType string, deployersRepository *repositories.DeployersRepository) *Deployer {
-    return &Deployer{
-        runnerType: runnerType,
-        deployersRepository: deployersRepository,
-        errorNotifier: make(chan error),
-        stopper: make(chan bool),
+func NewDeployer(config *Config, zookeeper *storage.Zookeeper, modelsStore files.FilesStore) (*Deployer, error) {
+    modelsDir, err := files.NewLocalStorage(files.LocalStorageConfig{Dir: config.ModelsDir})
+    if err != nil {
+        return nil, err
     }
+
+    return &Deployer{
+        config: config,
+        deployerRepository: repositories.NewDeployerRepository(zookeeper),
+        modelsStore: modelsStore,
+        modelsDir: modelsDir,
+        logger: log.WithFields(log.Fields{"model_id": config.ModelId}),
+        versions: make(map[int64]string),
+        stopper: make(chan struct{}),
+    }, nil
 }
 
 func (d *Deployer) Close() {
@@ -33,28 +45,21 @@ func (d *Deployer) Close() {
 }
 
 func (d *Deployer) Run() error {
-    instance, err := d.deployersRepository.RegisterInstance(d.runnerType); 
-    if err != nil {
+    if err := d.waitForModel(); err != nil {
         return err
     }
-    d.zookeeperInstance = instance
-    d.logger = log.WithFields(log.Fields{"deployer_instance_uid": instance.Uid})
-    d.logger.Info("Registered instance.")
+    d.logger.Info("Watching model versions.")
 
-    go d.watchLeader()
-    go d.watchTasks()
-
-    select {
-    case err := <- d.errorNotifier:
-        return err
-    case <- d.stopper:
-        return nil
-    }
-}
-
-func (d *Deployer) watchTasks() error {
     for {
+        versions, event, err := d.deployerRepository.ListVersionsW(d.config.ModelId)
+        if err != nil {
+            return err
+        }
+        d.updateVersions(versions)
+
         select {
+        case <- event:
+            continue
         case <- d.stopper:
             return nil
         }
@@ -62,70 +67,71 @@ func (d *Deployer) watchTasks() error {
     return nil
 }
 
-func (d *Deployer) watchLeader() {
-    for {
-        leader, isLeader, err := d.leaderInstance()
-        if err != nil {
-            d.errorNotifier <- fmt.Errorf("Failed to get leader instance. %v", err)
-            return
-        }
-        d.logger.Infof("Leader instance uid: %s", leader.Uid)
-
-        if isLeader {
-            d.logger.Infof("Instance is leader.")
-            go d.watchModels()
-            return
-        }
-
-        event, err := d.deployersRepository.WatchInstance(d.runnerType, leader.Uid)
-        if err != nil {
-            d.errorNotifier <- fmt.Errorf("Failed to set watch on leader instance. %v", err)
-            return
-        }
-
-        select {
-        case <- event:
-            continue
-        case <- d.stopper:
-            return
-        }
-    }
-}
-
-func (d *Deployer) watchModels() {
-    for {
-        models, event, err := d.deployersRepository.ListModels(d.runnerType)
-        if err != nil {
-            d.errorNotifier <- err
-            return
-        }
-
-        log.Infof("Loaded models: %d", len(models))
-
-        select {
-        case <- event:
-            continue
-        case <- d.stopper:
-            return
-        }
-    }
-}
-
-func (d *Deployer) leaderInstance() (*repositories.DeployerInstance, bool, error) {
-    instances, err := d.deployersRepository.ListInstances(d.runnerType)
+func (d *Deployer) waitForModel() error {
+    exists, event, err := d.deployerRepository.ModelExistsW(d.config.ModelId)
     if err != nil {
-        return nil, false, err
+        return err
+    }
+    if exists {
+        return nil
     }
 
-    var leaderInstanceIndex int = 0
-    var minSeq uint64 = math.MaxUint64
+    d.logger.Info("Waiting for model.")
+    select {
+    case <- event:
+        return nil
+    case <- time.After(30 * time.Second):
+        return fmt.Errorf("Timeout while waiting for model to be available.")
+    }
+}
 
-    for i, instance := range instances {
-        if instance.Seq < minSeq {
-            minSeq = instance.Seq
-            leaderInstanceIndex = i
+func (d *Deployer) updateVersions(versions map[int64]string) {
+    fetched := make(map[int64]struct{})
+    for versionId, sourcePath := range versions {
+        fetched[versionId] = struct{}{}
+        if _, exists := d.versions[versionId]; !exists {
+            d.versions[versionId] = sourcePath
+            go d.deployVersion(versionId, sourcePath)
         }
     }
 
-    return instances[leaderInstanceIndex], instances[leaderInstanceIndex].Uid == d.zookeeperInstance.Uid, nil
+    for versionId, fileName := range d.versions {
+        if _, exists := fetched[versionId]; !exists {
+            delete(d.versions, versionId)
+            go d.undeployVersion(versionId, fileName)
+        }
+    }
 }
+
+func (d *Deployer) deployVersion(id int64, fileName string) {
+    reader, err := d.modelsStore.Reader(fileName)
+    if err != nil {
+        log.Errorf("Failed to deploy model version %d. %v", id, err)
+        return
+    }
+    defer reader.Close()
+
+    writer, err := d.modelsDir.Writer(fileName)
+    if err != nil {
+        log.Errorf("Failed to deploy model version %d. %v", id, err)
+        return
+    }
+    defer writer.Close()
+
+    _, err = io.Copy(writer, reader); 
+    if err != nil {
+        log.Errorf("Failed to deploy model version %d. %v", id, err)
+        return
+    }
+
+    log.Infof("Deployed version: %d, filename: %s", id, fileName)
+}
+
+func (d *Deployer) undeployVersion(id int64, fileName string) {
+    if err := d.modelsDir.Delete(fileName); err != nil {
+        log.Error("Failed to undeploy version %d. %v", id, err)
+        return
+    }
+    log.Infof("Undeployed version: %d", id)
+}
+

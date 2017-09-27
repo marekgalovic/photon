@@ -9,22 +9,22 @@ import (
     "github.com/marekgalovic/photon/go/core/metrics";
 )
 
-type CassandraFeaturesStore struct {
+type cassandraFeaturesStore struct {
     db *storage.Cassandra
 }
 
-func NewCassandraFeaturesStore(db *storage.Cassandra) *CassandraFeaturesStore {
-    return &CassandraFeaturesStore{
+func NewCassandraFeaturesStore(db *storage.Cassandra) *cassandraFeaturesStore {
+    return &cassandraFeaturesStore{
         db: db,
     }
 }
 
-func (s *CassandraFeaturesStore) Get(uid string, keys []string, params map[string]interface{}) (map[string]interface{}, error) {
+func (s *cassandraFeaturesStore) Get(id int64, keys []string, params map[string]interface{}) (map[string]interface{}, error) {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:get"})()
 
     sql := fmt.Sprintf(
         `SELECT data FROM %s WHERE %s LIMIT 1`,
-        s.TableName(uid), strings.Join(s.selectConditions(keys, params), " AND "),
+        s.TableName(id), strings.Join(s.selectConditions(keys, params), " AND "),
     )
 
     var marshaledData []byte
@@ -40,15 +40,15 @@ func (s *CassandraFeaturesStore) Get(uid string, keys []string, params map[strin
     return data, nil
 }
 
-func (s *CassandraFeaturesStore) Insert(uid, schemaUid string, keys []string, data map[string]interface{}) error {
+func (s *cassandraFeaturesStore) Insert(id int64, keys []string, data map[string]interface{}) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:insert"})()
 
     sql := fmt.Sprintf(
-        `INSERT INTO %s (schema_uid,%s,data) VALUES (%s)`,
-        s.TableName(uid), strings.Join(keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(keys)+2), ","),
+        `INSERT INTO %s (%s,data) VALUES (%s)`,
+        s.TableName(id), strings.Join(keys, ","), strings.TrimSuffix(strings.Repeat("?,", len(keys)+1), ","),
     )
 
-    values, err := s.insertValues(schemaUid, keys, data)
+    values, err := s.insertValues(keys, data)
     if err != nil {
         return nil
     }
@@ -56,30 +56,30 @@ func (s *CassandraFeaturesStore) Insert(uid, schemaUid string, keys []string, da
     return s.db.Query(sql, values...).Exec()
 }
 
-func (s *CassandraFeaturesStore) CreateFeatureSet(uid string, keys []string) error {
+func (s *cassandraFeaturesStore) CreateFeatureSet(id int64, keys []string) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:create_feature_set"})()
 
     sql := fmt.Sprintf(
-        `CREATE TABLE %s (schema_uid UUID, %s, data TEXT, PRIMARY KEY (%s))`,
-        s.TableName(uid), strings.Join(s.keysSchema(keys), ","), strings.Join(keys, ","),
+        `CREATE TABLE %s (%s, data TEXT, PRIMARY KEY (%s))`,
+        s.TableName(id), strings.Join(s.keysSchema(keys), ","), strings.Join(keys, ","),
     )
 
     return s.db.Query(sql).Exec()
 }
 
-func (s *CassandraFeaturesStore) DeleteFeatureSet(uid string) error {
+func (s *cassandraFeaturesStore) DeleteFeatureSet(id int64) error {
     defer metrics.Runtime("features_store.runtime", []string{"type:cassandra", "method:delete_feature_set"})()
 
-    sql := fmt.Sprintf("DROP TABLE %s", s.TableName(uid))
+    sql := fmt.Sprintf("DROP TABLE %s", s.TableName(id))
 
     return s.db.Query(sql).Exec()
 }
 
-func (s *CassandraFeaturesStore) TableName(name string) string {
-    return fmt.Sprintf("set_%s", strings.Replace(name, "-", "_", -1))     
+func (s *cassandraFeaturesStore) TableName(featureSetId int64) string {
+    return fmt.Sprintf("feature_set_%d", featureSetId)     
 }
 
-func (s *CassandraFeaturesStore) selectConditions(keys []string, params map[string]interface{}) []string {
+func (s *cassandraFeaturesStore) selectConditions(keys []string, params map[string]interface{}) []string {
     conditions := make([]string, len(keys))
     for i, key := range keys {
         conditions[i] = fmt.Sprintf("%s = '%v'", key, params[key])
@@ -87,8 +87,8 @@ func (s *CassandraFeaturesStore) selectConditions(keys []string, params map[stri
     return conditions
 }
 
-func (s *CassandraFeaturesStore) insertValues(schema_uid string, keys []string, data map[string]interface{}) ([]interface{}, error) {
-    values := []interface{}{schema_uid}
+func (s *cassandraFeaturesStore) insertValues(keys []string, data map[string]interface{}) ([]interface{}, error) {
+    values := make([]interface{}, 0)
 
     for _, key := range keys {
         value, exists := data[key]
@@ -108,7 +108,7 @@ func (s *CassandraFeaturesStore) insertValues(schema_uid string, keys []string, 
     return values, nil
 }
 
-func (s *CassandraFeaturesStore) keysSchema(keys []string) []string {
+func (s *cassandraFeaturesStore) keysSchema(keys []string) []string {
     schema := make([]string, 0, len(keys))
     for _, key := range keys {
         schema = append(schema, fmt.Sprintf("%s VARCHAR", key))

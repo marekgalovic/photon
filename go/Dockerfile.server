@@ -1,0 +1,15 @@
+FROM golang:1.8-alpine
+
+RUN apk --update add curl bash build-base git pkgconfig
+RUN mkdir /photon
+
+COPY ./core /go/src/github.com/marekgalovic/photon/go/core
+COPY ./server /go/src/github.com/marekgalovic/photon/go/deployer
+COPY ./cmd/deployer /photon
+
+WORKDIR /photon
+RUN go get -u cloud.google.com/go/... && go get -t -d -v ./...
+RUN go build -o ./server ./main.go
+RUN chmod +x ./server
+
+CMD ["/photon/server"]

@@ -6,7 +6,7 @@ import (
     "io/ioutil";
     "path/filepath";
 
-    "github.com/marekgalovic/photon/go/core/storage/repositories";
+    "github.com/marekgalovic/photon/go/core/repositories";
 
     "github.com/fsnotify/fsnotify";
     log "github.com/Sirupsen/logrus"
@@ -113,7 +113,7 @@ func (m *ModelManager) watch() error {
 
 func (m *ModelManager) create(path string) error {
     fileName := filepath.Base(path)
-    uid, err := m.instancesRepository.Register(fileName, m.config.Address, m.config.Port)
+    uid, err := m.instancesRepository.Register(fileName, &repositories.Instance{Address: m.config.Address, Port: m.config.Port})
     if err != nil {
         return err
     }

@@ -8,7 +8,7 @@ import (
 )
 
 var metricsClient ClientInterface = &StdoutClient{}
-var metricsBasename string = "serving"
+var metricsBasename string = "photon"
 
 type ClientInterface interface {
     Gauge(name string, value float64, tags []string, rate float64) error
